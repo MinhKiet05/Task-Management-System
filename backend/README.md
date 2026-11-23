@@ -23,7 +23,7 @@ Missing database variables cause datasource configuration/startup to fail; inval
 
 `GET /api/health` returns `200` with `{"status":"UP"}` without authentication.
 This is a basic application liveness endpoint, not a continuous database readiness check.
-Registration and login POST routes are public. `/api/auth/me`, `/api/auth/logout`, and the six project endpoints require a signed JWT backed by an active database session. Other business routes remain denied. No generated default user, login page or HTTP Basic is enabled.
+Registration and login POST routes are public. `/api/auth/me`, `/api/auth/logout`, and the project/task endpoints require a signed JWT backed by an active database session. Other business routes remain denied. No generated default user, login page or HTTP Basic is enabled.
 HTTP sessions are stateless; bearer credentials are supplied only through Authorization headers. CSRF is disabled for this bearer-only API; cookie authentication is not enabled.
 CORS allows the configured frontend origin and Authorization/Content-Type request headers; cookie credentials are disabled.
 
@@ -37,7 +37,7 @@ Framework CORS rejections use Spring's default response.
 | --- | --- |
 | `config` | Security filter chain and CORS configuration |
 | `controller` | HTTP endpoints |
-| `service` | Authentication use cases; future business services |
+| `service` | Authentication, project and task use cases |
 | `repository` | Future Spring Data JPA interfaces |
 | `entity` | Future JPA entities |
 | `dto` | API request/response models |
@@ -46,7 +46,7 @@ Framework CORS rejections use Spring's default response.
 | `mapper` | Future entity/DTO conversions |
 | `enums` | Future domain enumeration types |
 
-Unused layers are retained using `package-info.java`. Task 2 adds entities, enums and repositories; Task 3 adds authentication. Task/project business services remain deferred.
+Unused layers are retained using `package-info.java`. Task 2 adds entities, enums and repositories; Task 3 adds authentication. Project and task services enforce ownership within RLS transactions.
 
 ## Database changes
 
@@ -65,4 +65,4 @@ The context smoke test excludes datasource/JPA/Flyway auto-configuration and moc
 Database-independent tests verify health, denied routes, CORS, validation errors, malformed JSON, safe unexpected-error responses and JWT validation.
 The default tests do not contact a database. The opt-in PostgreSQL integration suite executes Flyway, validates Hibernate mappings and tests constraints, RLS and concurrency against a disposable loopback database. On Windows, run `.\scripts\Test-Postgres.ps1` to create that isolated database and run all tests. See the database design document for details. Supabase production connectivity has not been tested.
 
-Task 4 project management is complete; see [project APIs](docs/projects.md) for pagination, ownership, archive rules and cascading deletion. Task endpoints, OpenAPI, Docker, and deployment remain deferred.
+Task 5 task management is complete. See [project APIs](docs/projects.md) and [task APIs](docs/tasks.md) for ownership, filters, pagination, sorting, archive behavior and deletion. OpenAPI, Docker, and deployment remain deferred.

@@ -50,6 +50,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/projects/*").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/projects/*/archive").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/projects/*/tasks").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/projects/*/tasks", "/api/tasks/*").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/tasks/*").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/tasks/*/status").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/tasks/*").authenticated()
                         // Business routes are introduced only with their own authorization rules.
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptions -> exceptions
