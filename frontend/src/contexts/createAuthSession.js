@@ -10,7 +10,7 @@ export function createAuthSession({
   let snapshot = {
     user: null,
     status: token ? 'checking' : 'anonymous',
-    expiresAt: null,
+    expiresAt: tokens.getExpiresAt?.() || null,
     logoutError: '',
   }
   let pending = null
@@ -31,13 +31,13 @@ export function createAuthSession({
     publish({
       user: null,
       status: token ? 'checking' : 'anonymous',
-      expiresAt: null,
+      expiresAt: tokens.getExpiresAt?.() || null,
       logoutError: '',
     })
   })
 
   function completeAuthentication(data) {
-    tokens.setAccessToken(data.accessToken)
+    tokens.setAccessToken(data.accessToken, data.expiresAt || null)
     publish({
       user: data.user || null,
       status: data.user ? 'authenticated' : 'checking',

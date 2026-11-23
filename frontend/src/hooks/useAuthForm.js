@@ -62,8 +62,8 @@ export function useAuthForm(mode) {
       const data = await authenticate(mode, values, controller.signal)
       if (controller.signal.aborted) return
       notify.dismiss(sessionExpiredToastId)
-      feedback.success()
       completeAuthentication(data)
+      feedback.success()
       navigate('/dashboard', { replace: true })
     } catch (error) {
       if (!controller.signal.aborted) {

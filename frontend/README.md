@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. FE-05 adds project management. FE-06 adds project-scoped task management. FE-07 adds a Kanban board with incremental column loading, drag-and-drop status updates, keyboard alternatives and an editable task details drawer.
+TaskFlow is a JavaScript React/Vite application with Tailwind CSS, React Router, Axios, TanStack Query, Sonner and dnd-kit. It includes Vietnamese authentication, a protected responsive workspace, a real-API dashboard, project/task management, an All Projects task list and a Kanban board with optimistic status changes and an editable task drawer. FE-08 adds same-tab reload restoration and full-stack integration verification; production deployment remains pending authorization/access. See the [root README](../README.md) for current deployment status and instructions. Later historical verification sections describe the state at each earlier milestone.
 
 ## Local setup
 
@@ -25,13 +25,14 @@ This is the backend origin, without `/api` or a trailing path. HTTPS is required
 
 ```text
 src/
-  api/          Axios client, environment validation, in-memory token store
+  api/          Axios client, environment validation, tab-scoped token store
   assets/       Shared brand mark and future design assets
   components/   Shared presentation and error boundary
   contexts/     Authentication state provider
   hooks/        Authentication access and document titles
   layouts/      Workspace and authentication shells
-  pages/        Route-level placeholders and 404
+  pages/        Dashboard, projects, tasks, Kanban, auth, details and 404
+  query/        Session-scoped cache keys, client and mutation reconciliation
   routes/       Route definitions
 ```
 
@@ -39,7 +40,7 @@ Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/tasks/:tas
 
 Project cards now open `/projects/:projectId/tasks`. Project search/status filtering/date sorting apply only to the loaded API page and are explicitly labeled. Project CRUD/archiving use real API endpoints with full PUT payloads and confirmation dialogs. See [FE-05 project management](docs/projects.md) for supported behavior, limitations and verification.
 
-`/tasks` and `/projects/:projectId/tasks` share the task workspace. Select an owned project to view its tasks and counts; there is no global task-list endpoint or cross-project pagination. Task search, status/priority filters, sorting and pagination run on the backend for the selected project. See [FE-06 task management](docs/tasks.md) for request contracts, archived restrictions, date handling and verification.
+`/tasks` defaults to All Projects; `/projects/:projectId/tasks` selects one owned project. There is no global backend task-list endpoint: the frontend retrieves complete project-scoped pages with limited concurrency and applies combined filtering/sorting/pagination locally. A fresh complete project snapshot can also serve individual pages; otherwise the individual-project API handles filtering/pagination. See the All Projects section below and [FE-06 task management](docs/tasks.md) for the original contracts and archive restrictions.
 
 `/kanban` shows one owned project in three status columns, with server-side title/priority filtering, accurate filtered totals and explicit per-column loading of 20 tasks at a time. Cards open a right-side details drawer; create/edit/delete reuse the existing task dialogs. Dragging persists status through the backend, with pending/rollback behavior and a keyboard-accessible status selector. See [FE-07 Kanban and task drawer](docs/kanban.md) for loading limits, ordering, accessibility and verification.
 
@@ -53,7 +54,7 @@ Future API modules should import `apiClient` from `src/api/client.js` and use re
 
 `useAuth()` exposes current `user`, lifecycle `status`, `completeAuthentication`, `logout`, `retryUser` and the existing token helpers. Successful registration/login stores the returned access token and user, then navigates to `/dashboard`. A token without user data triggers one deduplicated `/api/auth/me` request. Token presence alone does not expose protected content. Never decode an unverified JWT to authorize access.
 
-Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads return to login. A 401 clears the matching current token and user; late failures from an older token do not clear a newer session. Backend-returned access-token expiry also clears the session. A 403 or network error preserves the token. There is no automatic refresh. Logout sends the current bearer token to the backend before clearing local state and redirecting. Failed revocation stays visible and retryable rather than claiming server logout succeeded.
+The token and its server-provided expiration are stored in memory and same-tab `sessionStorage`, scoped to the configured API origin. Reload restores only an unexpired record and verifies `/api/auth/me` before protected content; no user or query cache is persisted. Missing/malformed/expired records are removed, and denied storage falls back to memory-only login. A 401 clears the matching token, storage, user and query caches; stale failures cannot clear a newer session. Expiry also clears the session. A 403/network error preserves it. There is no refresh endpoint or automatic extension. Logout revokes on the server before clearing locally; failed revocation stays retryable. JavaScript-readable bearer storage is exposed to XSS; it is not an HttpOnly refresh-cookie design. Closing/duplicating tabs follows browser sessionStorage behavior, and cross-tab automatic logout is not implemented.
 
 ## Checks
 

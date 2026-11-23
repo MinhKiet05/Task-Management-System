@@ -78,6 +78,12 @@ await context.route('**/*', async (route) => {
     body = request.postData() ? request.postDataJSON() : undefined
   calls.push({ path, method, params, body })
   const reply = (json, status = 200) => route.fulfill({ json, status, headers })
+  if (path === '/api/auth/me')
+    return reply({
+      id: id(9),
+      name: 'Test User',
+      email: 'test@example.invalid',
+    })
   if (path === '/api/auth/login')
     return reply({
       accessToken: 'TEST_ONLY_TOKEN',

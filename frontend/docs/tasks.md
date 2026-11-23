@@ -1,5 +1,7 @@
 # FE-06: Task management
 
+> Historical FE-06 implementation record. `/tasks` now defaults to All Projects, with complete per-project aggregation and shared query caching; individual project mode remains supported. See the [current README](../README.md) for aggregation, authentication persistence and final verification.
+
 `/tasks` implements “Công việc của tôi” inside the existing protected AppLayout. `/projects/:projectId/tasks` uses the same workspace with an initial project scope; `/tasks?projectId=UUID` also supports project links. Login, registration, the dashboard and project CRUD are unchanged. Task details now link back to their project's task list.
 
 ## Scope and API contract

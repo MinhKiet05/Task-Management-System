@@ -1,5 +1,7 @@
 # FE-03: TaskFlow application layout
 
+> Historical FE-03 implementation record. Current features include project/task CRUD, dashboard and Kanban; FE-08 restores unexpired same-tab sessions through sessionStorage plus `/api/auth/me`. See the [current README](../README.md) for cache/authentication and deployment behavior.
+
 The Stitch dashboard is a visual reference for the shell only. FE-03 supplies a white 240px desktop sidebar, white sticky header, lavender canvas, Inter typography and indigo active navigation. There are no demo users, mock API responses, counters, metrics, charts or business-data requests in application code. Dashboard statistics remain FE-04.
 
 ## Navigation and responsiveness

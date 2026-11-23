@@ -160,14 +160,14 @@ export function TaskDrawer({
               <button
                 className="project-button-danger"
                 disabled={locked}
-                onClick={() => setMode('delete')}
+                onClick={() => setMode({ type: 'delete', task })}
               >
                 Xóa công việc
               </button>
               <button
                 className="project-button-primary"
                 disabled={locked}
-                onClick={() => setMode('edit')}
+                onClick={() => setMode({ type: 'edit', task })}
               >
                 Chỉnh sửa công việc
               </button>
@@ -175,9 +175,9 @@ export function TaskDrawer({
           )}
         </div>
       </dialog>
-      {mode === 'edit' && (
+      {mode?.type === 'edit' && (
         <TaskEditor
-          task={task}
+          task={mode.task}
           project={project}
           projects={projects}
           onClose={() => setMode(null)}
@@ -187,9 +187,9 @@ export function TaskDrawer({
           }}
         />
       )}
-      {mode === 'delete' && (
+      {mode?.type === 'delete' && (
         <TaskDeleteDialog
-          task={task}
+          task={mode.task}
           onClose={() => setMode(null)}
           onSuccess={() => {
             setMode(null)
