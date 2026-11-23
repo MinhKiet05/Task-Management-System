@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout; workspace content remains placeholders. CRUD, dashboard data and Kanban interactions are deferred.
+FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. Project/task management pages and Kanban interactions remain placeholders.
 
 ## Local setup
 
@@ -35,7 +35,7 @@ src/
   routes/       Route definitions
 ```
 
-Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404 inside the protected shell. Workspace routes require an authenticated user and redirect to `/login` otherwise. Workspace content remains placeholders and makes no business-data requests. Backend authorization remains required for every protected API request. See [FE-03 application layout](docs/application-layout.md).
+Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/tasks/:taskId`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404 inside the protected shell. Workspace routes require an authenticated user and redirect to `/login` otherwise. The dashboard reads real summary/deadline/project data and task links open a read-only detail page. Backend authorization remains required for every protected API request. See [FE-03 application layout](docs/application-layout.md) and [FE-04 dashboard](docs/dashboard.md).
 
 ## API and token handling
 

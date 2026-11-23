@@ -5,6 +5,7 @@ import { AuthLayout } from '../layouts/AuthLayout.jsx'
 import { DashboardPage } from '../pages/DashboardPage.jsx'
 import { ProjectsPage } from '../pages/ProjectsPage.jsx'
 import { TasksPage } from '../pages/TasksPage.jsx'
+import { TaskDetailsPage } from '../pages/TaskDetailsPage.jsx'
 import { KanbanPage } from '../pages/KanbanPage.jsx'
 import { LoginPage } from '../pages/LoginPage.jsx'
 import { RegisterPage } from '../pages/RegisterPage.jsx'
@@ -23,6 +24,7 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
