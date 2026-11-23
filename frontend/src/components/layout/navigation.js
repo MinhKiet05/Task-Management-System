@@ -1,7 +1,7 @@
 export const navigation = [
   { to: '/dashboard', label: 'Tổng quan', icon: 'dashboard' },
-  { to: '/tasks', label: 'Việc của tôi', icon: 'tasks' },
   { to: '/projects', label: 'Dự án', icon: 'projects' },
+  { to: '/tasks', label: 'Việc của tôi', icon: 'tasks' },
   { to: '/kanban', label: 'Bảng Kanban', icon: 'kanban' },
 ]
 

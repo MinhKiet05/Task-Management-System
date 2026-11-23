@@ -11,8 +11,18 @@ import {
   validateTask,
 } from './taskModel.js'
 
-export function TaskEditor({ task, project, projects, onClose, onSuccess }) {
-  const [values, setValues] = useState(() => taskForm(task, project.id))
+export function TaskEditor({
+  task,
+  project,
+  projects,
+  onClose,
+  onSuccess,
+  initialStatus = 'TODO',
+}) {
+  const [values, setValues] = useState(() => ({
+    ...taskForm(task, project.id),
+    ...(!task && { status: initialStatus }),
+  }))
   const [errors, setErrors] = useState({})
   const mutation = useTaskMutation(onSuccess)
   const combined = { ...mutation.fieldErrors, ...errors }
