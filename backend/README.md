@@ -46,20 +46,22 @@ Framework CORS rejections use Spring's default response.
 | `mapper` | Future entity/DTO conversions |
 | `enums` | Future domain enumeration types |
 
-Empty layers are retained using `package-info.java`, without placeholder business classes.
+Unused layers are retained using `package-info.java`. Task 2 adds entities, enums and repositories; business services remain deferred.
 
 ## Database changes
 
 Add SQL migrations under `src/main/resources/db/migration`, named `V1__description.sql`, `V2__description.sql`, etc.
-No business tables or seed data are defined in this task. Flyway is enabled and may create its schema history table at startup.
+V1 creates users, sessions, projects and tasks, native enums, indexes, integrity constraints, triggers and forced ownership policies. Optional development data is a manual script outside Flyway.
 Hibernate uses `ddl-auto=validate`, SQL initialization is disabled, and Flyway clean is disabled.
 Use a dedicated application database/schema; do not enable automatic baselining for an existing Supabase schema without inspecting it.
+
+See [Task 2 database design](docs/database-design.md) for schema changes, transaction retry requirements, runtime/migration permissions, future JWT ownership integration, manual seed usage, and isolated PostgreSQL tests. Separate Flyway credentials can be set using `FLYWAY_DB_URL`, `FLYWAY_DB_USERNAME`, and `FLYWAY_DB_PASSWORD`.
 
 ## Verification
 
 From `backend/`, run `./mvnw compile test` (PowerShell: `.\mvnw.cmd compile test`).
 The context smoke test excludes datasource/JPA/Flyway auto-configuration so it runs without credentials.
 MVC tests verify public health access, denied routes, CSRF, CORS, validation errors, malformed JSON, and safe unexpected-error responses.
-These tests do not validate a real Supabase connection or execute database migrations. Run the application against your configured PostgreSQL database to verify those integrations.
+The default tests do not contact a database. The opt-in PostgreSQL integration suite executes Flyway, validates Hibernate mappings and tests constraints, RLS and concurrency against a disposable loopback database. On Windows, run `.\scripts\Test-Postgres.ps1` to create that isolated database and run all tests. See the database design document for details. Supabase production connectivity has not been tested.
 
 Business features, authentication, OpenAPI, Docker, and deployment are deferred.
