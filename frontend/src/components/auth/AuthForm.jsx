@@ -81,7 +81,7 @@ export function AuthForm({ mode }) {
                 register ? 'Tạo mật khẩu của bạn' : 'Nhập mật khẩu của bạn'
               }
               value={values.password}
-              error={errors.password}
+              error={errors.password} 
               hintId={register ? 'password-requirements' : undefined}
             />
             {register && <PasswordRequirements password={values.password} />}

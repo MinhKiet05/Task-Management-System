@@ -6,6 +6,9 @@ export function createTasksApi(client) {
     return data
   }
   return {
+    get: async (id, signal) =>
+      (await client.get(`/api/tasks/${encodeURIComponent(id)}`, { signal }))
+        .data,
     projects: async (signal) => {
       const first = await page('/api/projects', { page: 0, size: 100 }, signal)
       const projects = new Map(

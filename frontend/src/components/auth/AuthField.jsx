@@ -39,8 +39,9 @@ export function AuthField({
             aria-label={`${visible ? 'Ẩn' : 'Hiện'} ${label.toLowerCase()}`}
             aria-pressed={visible}
             onClick={() => setVisible(!visible)}
+            tabIndex={-1}
           >
-            <AuthIcon name={visible ? 'eyeOff' : 'eye'} />
+            <AuthIcon  name={visible ? 'eyeOff' : 'eye'} />
           </button>
         )}
       </div>
