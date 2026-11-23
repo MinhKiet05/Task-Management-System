@@ -18,6 +18,7 @@ class BackendApplicationTests {
     @MockitoBean private AuthRepository authRepository;
     @MockitoBean private RlsContext rlsContext;
     @MockitoBean private ProjectService projectService;
+    @MockitoBean private backend.service.TaskService taskService;
 
     @Test
     void contextLoads() {
