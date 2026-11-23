@@ -1,6 +1,7 @@
 import { Icon } from '../Icon.jsx'
 import { formatCount } from './presentation.js'
 import { ResourceState } from './ResourceState.jsx'
+import { BackgroundSync } from '../BackgroundSync.jsx'
 
 const cards = [
   { key: 'totalTasks', label: 'Tổng số công việc', icon: 'tasks' },
@@ -15,6 +16,7 @@ export function SummaryCards({ resource }) {
       aria-label="Thống kê công việc"
       className="dashboard-summary-section"
     >
+      <BackgroundSync resource={resource} />
       {resource.status === 'error' ? (
         <ResourceState resource={resource} />
       ) : (

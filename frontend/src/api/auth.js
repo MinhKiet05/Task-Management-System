@@ -1,3 +1,5 @@
+import { queryClient, scopedKey } from '../query/client.js'
+import { keys } from '../query/keys.js'
 import { apiClient } from './client.js'
 
 export async function authenticate(mode, values, signal) {
@@ -12,8 +14,15 @@ export async function authenticate(mode, values, signal) {
 }
 
 export async function getCurrentUser(signal) {
-  const { data } = await apiClient.get('/api/auth/me', { signal })
-  return data
+  return queryClient.fetchQuery({
+    queryKey: scopedKey(keys.user),
+    queryFn: async ({ signal: querySignal }) =>
+      (
+        await apiClient.get('/api/auth/me', {
+          signal: signal ? AbortSignal.any([signal, querySignal]) : querySignal,
+        })
+      ).data,
+  })
 }
 
 export async function revokeSession() {

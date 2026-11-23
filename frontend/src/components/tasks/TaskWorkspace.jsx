@@ -1,3 +1,5 @@
+import { keys } from '../../query/keys.js'
+import { BackgroundSync } from '../BackgroundSync.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { tasksApi } from '../../api/tasks.js'
@@ -39,7 +41,12 @@ function TaskState({ resource, children }) {
         </button>
       </div>
     )
-  return children
+  return (
+    <>
+      <BackgroundSync resource={resource} />
+      {children}
+    </>
+  )
 }
 
 function TaskScope({ project, projects, selectProject, refreshProjects }) {
@@ -75,16 +82,16 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
     (signal) => tasksApi.overdue(project.id, signal),
     [project.id],
   )
-  const tasks = useApiResource(loadTasks, JSON.stringify([project.id, query]))
-  const summary = useApiResource(loadSummary, `task-summary-${project.id}`)
-  const overdue = useApiResource(loadOverdue, `task-overdue-${project.id}`)
+  const tasks = useApiResource(loadTasks, keys.tasks(project.id, query))
+  const summary = useApiResource(loadSummary, keys.summary(project.id))
+  const overdue = useApiResource(loadOverdue, keys.overdue(project.id, 0, 1))
   const locked = project.status !== 'ACTIVE'
   const refresh = () => {
     tasks.retry()
     summary.retry()
     overdue.retry()
   }
-  const quickStatus = useTaskMutation(refresh, 'status')
+  const quickStatus = useTaskMutation(() => {}, 'status')
   const change = (name, value) =>
     setQuery((previous) => ({ ...previous, search, [name]: value, page: 0 }))
   const reset = () => {
@@ -121,19 +128,14 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
     },
   ]
   function saved(result) {
-    const creating = dialog?.type === 'create'
     const deleting = dialog?.type === 'delete'
     setDialog(null)
     if (result?.projectId && result.projectId !== project.id) {
       selectProject(result.projectId)
       return
     }
-    if (creating) {
-      setSearch('')
-      setQuery({ ...defaultTaskQuery, size: query.size })
-    } else if (deleting && page?.content.length === 1 && query.page > 0)
+    if (deleting && page?.content.length === 1 && query.page > 0)
       setQuery((previous) => ({ ...previous, page: previous.page - 1 }))
-    refresh()
   }
   return (
     <>
@@ -204,6 +206,8 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           </article>
         ))}
       </section>
+      <BackgroundSync resource={summary} />
+      <BackgroundSync resource={overdue} />
       <p className="tasks-scope-note">
         Thống kê toàn bộ dự án, không theo bộ lọc. Quá hạn được tính theo múi
         giờ máy chủ; nhãn ngày trên từng công việc theo ngày địa phương của bạn.
@@ -424,7 +428,7 @@ export function TaskWorkspace({ fixedProjectId }) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const loadProjects = useCallback((signal) => tasksApi.projects(signal), [])
-  const catalog = useApiResource(loadProjects, 'task-owned-projects')
+  const catalog = useApiResource(loadProjects, keys.catalog)
   usePageTitle('Việc của tôi', 'TaskFlow')
   const projects = catalog.data || []
   const requested = fixedProjectId || params.get('projectId')

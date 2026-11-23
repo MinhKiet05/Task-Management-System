@@ -1,3 +1,14 @@
+import { useSyncExternalStore } from 'react'
+import {
+  cacheVersion,
+  pendingWrites,
+  publishCache,
+  queryClient,
+  scopedKey,
+  subscribeCache,
+} from '../../query/client.js'
+import { keys } from '../../query/keys.js'
+import { BackgroundSync } from '../BackgroundSync.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { DragDropProvider } from '@dnd-kit/react'
@@ -47,7 +58,6 @@ function ProjectBoard({
   projects,
   selectProject,
   refreshProjects,
-  revision,
   onChanged,
   onOpen,
 }) {
@@ -55,7 +65,12 @@ function ProjectBoard({
   const [debounced, setDebounced] = useState('')
   const [priority, setPriority] = useState('')
   const [createStatus, setCreateStatus] = useState(null)
-  const [optimistic, setOptimistic] = useState(null)
+  useSyncExternalStore(subscribeCache, cacheVersion, cacheVersion)
+  const pendingIds = new Set(
+    [...pendingWrites.values()]
+      .filter((write) => write.kind === 'task')
+      .map((write) => write.id),
+  )
   const [now, setNow] = useState(() => new Date())
   const locked = project.status !== 'ACTIVE'
   useEffect(() => {
@@ -66,28 +81,17 @@ function ProjectBoard({
     const timer = setInterval(() => setNow(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
-  const mutation = useTaskMutation((task) => {
-    setOptimistic(null)
-    onChanged(task, 'status')
-  }, 'status')
+  const mutation = useTaskMutation(() => {}, 'status', true)
   function move(task, status) {
-    if (!canMove(task, status, locked, mutation.pending || optimistic)) return
-    void mutation.run(async (signal) => {
-      setOptimistic({ task, status })
-      try {
-        return await tasksApi.status(task.id, status, signal)
-      } catch (error) {
-        if (!signal.aborted) setOptimistic(null)
-        throw error
-      }
-    })
+    if (!canMove(task, status, locked, pendingIds.has(task?.id))) return
+    void mutation.run((signal) => tasksApi.status(task.id, status, signal))
   }
   function reset() {
     setSearch('')
     setDebounced('')
     setPriority('')
   }
-  const pending = mutation.pending
+  const pending = pendingIds.size > 0
   return (
     <>
       <header className="kanban-heading">
@@ -187,7 +191,7 @@ function ProjectBoard({
       )}
       {pending && (
         <p className="kanban-pending" role="status">
-          Đang lưu trạng thái… Các số đếm sẽ được tải lại sau khi lưu.
+          Đang lưu trạng thái… Bạn vẫn có thể chuyển các công việc khác.
         </p>
       )}
       {search !== debounced && (
@@ -207,7 +211,8 @@ function ProjectBoard({
       <DragDropProvider
         plugins={configurePlugins}
         onBeforeDragStart={(event) => {
-          if (locked || pending) event.preventDefault()
+          if (locked || pendingIds.has(event.operation.source?.data.task?.id))
+            event.preventDefault()
         }}
         onDragEnd={(event) => {
           if (!event.canceled)
@@ -227,10 +232,8 @@ function ProjectBoard({
               status={status}
               search={debounced}
               priority={priority}
-              revision={revision}
               locked={locked}
-              pending={pending}
-              optimistic={optimistic}
+              pendingIds={pendingIds}
               now={now}
               onOpen={onOpen}
               onStatus={move}
@@ -247,7 +250,6 @@ function ProjectBoard({
           onClose={() => setCreateStatus(null)}
           onSuccess={(task) => {
             setCreateStatus(null)
-            reset()
             onChanged(task, 'create')
           }}
         />
@@ -259,23 +261,28 @@ function ProjectBoard({
 export function KanbanWorkspace() {
   usePageTitle('Bảng Kanban', 'TaskFlow')
   const [params, setParams] = useSearchParams()
-  const [revision, setRevision] = useState(0)
   const [taskId, setTaskId] = useState(null)
   const loadProjects = useCallback((signal) => tasksApi.projects(signal), [])
-  const catalog = useApiResource(loadProjects, 'kanban-owned-projects')
+  const catalog = useApiResource(loadProjects, keys.catalog)
   const projects = catalog.data || []
   const requested = params.get('projectId')
   const project = requested
     ? projects.find((item) => item.id === requested)
     : projects.find((item) => item.status === 'ACTIVE') || projects[0]
   const selectProject = (id) => setParams({ projectId: id }, { replace: true })
-  function changed(task) {
-    setRevision((value) => value + 1)
+  function changed(task, action) {
+    if (action === 'reload') {
+      void queryClient.invalidateQueries({
+        queryKey: scopedKey(['tasks', 'board', project?.id]),
+      })
+      publishCache()
+    }
     if (task?.projectId && task.projectId !== project?.id)
       selectProject(task.projectId)
   }
   return (
     <div className="kanban-page">
+      <BackgroundSync resource={catalog} />
       {catalog.status === 'loading' ? (
         <div className="task-state" role="status">
           <h1>Bảng Kanban</h1>
@@ -311,7 +318,6 @@ export function KanbanWorkspace() {
           projects={projects}
           selectProject={selectProject}
           refreshProjects={catalog.retry}
-          revision={revision}
           onChanged={changed}
           onOpen={setTaskId}
         />
