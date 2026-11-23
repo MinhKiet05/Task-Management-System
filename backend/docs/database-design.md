@@ -48,7 +48,7 @@ Policies check users by their own ID, sessions by user ID, projects by owner ID,
 
 RLS trusts the backend database role to set the correct identity. Anyone holding that role's credentials could choose another UUID; keep JDBC credentials server-side. Public/anon/authenticated/service_role do not receive application-table access from this migration. Do not expose these tables through frontend Supabase queries.
 
-Authentication remains unimplemented. Login by email and account registration cannot simply use these owner policies before a verified user exists; Task 3 must design a narrowly privileged bootstrap path. Do not solve that by disabling RLS or granting runtime BYPASSRLS. Current HTTP security still exposes only health.
+Task 3 now provides authentication with a SELECT-only, exact-email lookup policy in V2, followed by password verification and transaction-local ownership context. Registration uses a server-generated user UUID. See [authentication](authentication.md) for the implemented bootstrap and API contract. RLS remains forced; runtime never needs BYPASSRLS.
 
 ## Supabase and deployment permissions
 

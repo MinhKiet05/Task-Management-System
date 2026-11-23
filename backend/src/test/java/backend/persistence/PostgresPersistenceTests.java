@@ -17,25 +17,22 @@ import backend.repository.ProjectRepository;
 import backend.repository.SessionRepository;
 import backend.repository.TaskRepository;
 import backend.repository.UserRepository;
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.*;
 
 /** Opt-in integration tests: only a disposable, loopback task2_test database is accepted. */
-@SpringBootTest
+@SpringBootTest(properties = "app.jwt.secret=dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE=")
 @EnabledIfEnvironmentVariable(named = "TASK2_TEST_DB_URL",
         matches = "jdbc:postgresql://(127\\.0\\.0\\.1|localhost):[0-9]+/task2_test")
-class PostgresPersistenceTests {
+class PostgresPersistenceTests extends backend.support.PostgresTestSupport {
     private static final UUID OWNER = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID OTHER = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID PROJECT = UUID.fromString("00000000-0000-0000-0000-000000000011");
@@ -43,7 +40,6 @@ class PostgresPersistenceTests {
     private static final UUID OTHER_PROJECT = UUID.fromString("00000000-0000-0000-0000-000000000013");
     private static final UUID TASK = UUID.fromString("00000000-0000-0000-0000-000000000021");
     private static final UUID SECOND_TASK = UUID.fromString("00000000-0000-0000-0000-000000000022");
-    private static final String URL = System.getenv("TASK2_TEST_DB_URL");
 
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -51,33 +47,6 @@ class PostgresPersistenceTests {
     @Autowired private ProjectRepository projects;
     @Autowired private TaskRepository tasks;
     @Autowired private SessionRepository sessions;
-
-    @DynamicPropertySource
-    static void databaseProperties(DynamicPropertyRegistry registry) throws SQLException {
-        if (URL == null || !URL.matches("jdbc:postgresql://(127\\.0\\.0\\.1|localhost):[0-9]+/task2_test")) {
-            throw new IllegalStateException("Only an explicit disposable loopback task2_test database is allowed");
-        }
-        Flyway flyway = Flyway.configure().dataSource(URL, "task2_migrator", "")
-                .defaultSchema("public").load();
-        flyway.migrate();
-        assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
-        assertThat(flyway.migrate().migrationsExecuted).isZero();
-        try (Connection admin = adminConnection(); var statement = admin.createStatement()) {
-            statement.execute("GRANT USAGE ON SCHEMA public TO task2_runtime");
-            statement.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON public.users, public.sessions, "
-                    + "public.projects, public.tasks TO task2_runtime");
-        }
-        registry.add("spring.datasource.url", () -> URL);
-        registry.add("spring.datasource.username", () -> "task2_runtime");
-        registry.add("spring.datasource.password", () -> "");
-        registry.add("spring.flyway.url", () -> URL);
-        registry.add("spring.flyway.user", () -> "task2_migrator");
-        registry.add("spring.flyway.password", () -> "");
-    }
-
-    private static Connection adminConnection() throws SQLException {
-        return DriverManager.getConnection(URL, "task2_admin", "");
-    }
 
     @BeforeEach
     void fixtures() throws SQLException {
