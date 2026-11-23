@@ -4,6 +4,7 @@ import java.sql.DriverManager;
 import java.util.UUID;
 
 import backend.support.PostgresTestSupport;
+import backend.config.DatabaseMigration;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -31,7 +32,9 @@ class FlywayMigrationIntegrationTests extends PostgresTestSupport {
                 statement.execute("INSERT INTO public.tasks(project_id,title,status) VALUES ('00000000-0000-0000-0000-000000000002','Preserved','DONE')");
             }
             Flyway latest = Flyway.configure().dataSource(migrationUrl, "task2_migrator", "").defaultSchema("public").load();
-            assertThat(latest.migrate().migrationsExecuted).isEqualTo(1);
+            // Local trust-auth test cluster accepts a nonempty test-only password.
+            assertThat(DatabaseMigration.migrate(java.util.Map.of("FLYWAY_DB_URL", migrationUrl,
+                    "FLYWAY_DB_USERNAME", "task2_migrator", "FLYWAY_DB_PASSWORD", "test-only")).migrationsExecuted).isEqualTo(1);
             assertThat(latest.validateWithResult().validationSuccessful).isTrue();
             assertThat(latest.migrate().migrationsExecuted).isZero();
             try (var admin = DriverManager.getConnection(migrationUrl, "task2_admin", ""); var statement = admin.createStatement();
