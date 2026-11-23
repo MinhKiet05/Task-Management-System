@@ -1,11 +1,14 @@
 package backend.controller;
 
 import backend.config.SecurityConfig;
+import backend.security.JwtService;
+import backend.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -17,6 +20,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = HealthController.class, properties = "app.cors.frontend-url=https://frontend.example")
 @Import(SecurityConfig.class)
 class HealthControllerTests {
+
+    @MockitoBean private JwtService jwt;
+    @MockitoBean private AuthService auth;
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,17 +44,17 @@ class HealthControllerTests {
     }
 
     @Test
-    void endpointsRemainDeniedUntilAuthenticationIsImplemented() throws Exception {
+    void businessEndpointsRemainDenied() throws Exception {
         mockMvc.perform(get("/api/tasks").with(user("test-user")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
     }
 
     @Test
-    void csrfProtectionRemainsEnabled() throws Exception {
+    void unsupportedPublicEndpointMethodsRequireAuthentication() throws Exception {
         mockMvc.perform(post("/api/health"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     @Test
