@@ -164,3 +164,28 @@ Files changed for this optimization (relative to `frontend/`):
 - Verification/documentation: new `tests/queryCache.test.js`, `scripts/performance-smoke.mjs`; this `README.md`.
 
 Reference for the adopted cache/cancellation/optimistic-update concepts: [TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates).
+
+## All Projects on the Tasks page
+
+`/tasks` defaults to **Tất cả dự án** (`all`), the first project-selector option. A project UUID or `/projects/:projectId/tasks` still selects an individual project; choosing All Projects from a project route navigates to `/tasks`. Each row shows its actual project and uses that project's archive restrictions. Create in the combined view starts with no target project: validation requires an accessible active project UUID. Editing preserves the task's association unless the user explicitly chooses another active project.
+
+There is no global `GET /api/tasks` request. After the shared owned-project catalog loads, `loadTaskCollection` retrieves every project's task pages sequentially in batches of 100, with a shared limiter allowing at most **three task-page reads in flight** across projects. Empty projects count as successfully loaded. Query keys `tasks/collection/:projectId` hold complete project snapshots, independently of current table filters. No first-page-only aggregation is used.
+
+Search, status/priority filters, sorting and pagination operate on the full combined collection, with accurate filtered totals. Task rows carry project metadata for the combined view. Enum priority/status ordering and timestamp precision are preserved; null dates follow PostgreSQL's default ascending/descending ordering. Client title sorting uses Vietnamese collation, which can differ from the database's configured text collation. Individual-project requests retain server-side sorting when no fresh complete snapshot is available.
+
+Complete snapshots reuse the existing 30-second freshness and five-minute garbage-collection policy. Individual pages can be derived from a fresh complete snapshot without an extra GET. Returning to All Projects reuses the same per-project caches; changing search, sort or table page does not refetch every task. Mutation cache updates now include complete snapshots, including optimistic status rollback, creation, edits/project moves and deletion. Existing paginated-list, Kanban, dashboard and authentication-cache behavior remains intact.
+
+Summary/status cards use the existing dashboard summary endpoint with the selected project UUID, or without `projectId` for All Projects. Overdue totals use the backend overdue endpoint with the same scope, page 0 and size 1, preserving server timezone/business rules. These cards describe the entire selected scope, independently of table filters.
+
+If a project fails to load, its snapshot is not published as a partial success. Without a complete snapshot for every accessible project, the combined list and pagination totals are withheld. The UI names failed projects, shows a Vietnamese Sonner error and offers retry of only those failures. A failed background refresh retains the previous complete snapshot with an explicit stale-data warning. Changed page totals, duplicate/missing rows or mismatched project IDs also reject a snapshot rather than silently reporting completeness. The existing session-expiry flow cancels reads and clears the scoped caches. **Tải lại công việc** refreshes task data/statistics; **Tải lại dự án** refreshes the project catalog.
+
+This remains a frontend workaround: the first combined load costs at least one task GET per project, plus subsequent pages, and filtering/sorting uses memory proportional to the total task count. Stale/manual refreshes may reread full project snapshots. Data read across multiple HTTP requests is not a transactionally consistent database snapshot; detected paging changes require retry. For large accounts, a future authorized backend endpoint should provide owner-scoped global search/filter/sort/pagination and summary data. No such endpoint, backend code or migration was introduced here.
+
+Verification executed on Windows / Node 22.17.0:
+
+- `npm test`: **129 passed**, zero failures/skips (eight additional tests for complete retrieval, cancellation/concurrency, global filtering/sorting/pagination, project validation and snapshot mutation consistency).
+- `npm run lint` and `npm run build`: passed.
+- `node scripts/all-projects-smoke.mjs`: four groups passed against isolated mocked HTTP responses in headless Edge. Checked 113 tasks across active/archived/empty projects, a second API page, maximum three concurrent reads, default/individual scope and cache reuse, names, global filters/pagination, backend overdue totals, CRUD in both scopes, required target UUIDs, archive locks, partial failure and targeted retry. No global tasks endpoint was called.
+- Existing `node scripts/performance-smoke.mjs`: all six regression groups passed. Browser tooling/setup is described above. All external requests were intercepted; no production authentication, database writes, push or deployment occurred.
+
+Files changed (relative to `frontend/`): `src/components/tasks/TaskWorkspace.jsx`, `TaskTable.jsx`, `TaskEditor.jsx`; `src/hooks/useApiResource.js`; `src/query/keys.js`, `mutations.js`; `tests/queryCache.test.js`; this `README.md`. New files: `src/api/taskCollection.js`, `src/components/tasks/combinedTasks.js`, `src/hooks/useTaskScopeResource.js`, `tests/allProjectsTasks.test.js`, `scripts/all-projects-smoke.mjs`.

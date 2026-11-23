@@ -68,6 +68,14 @@ export function taskDelta(before, after, positions = new Map()) {
       continue
     }
     const [, kind, projectId, filter] = key
+    if (kind === 'collection') {
+      if (before?.projectId === projectId || after?.projectId === projectId) {
+        const content = data.content.filter((task) => task.id !== id)
+        if (after?.projectId === projectId) content.push(after)
+        updatePage(query, { ...data, content, totalElements: content.length })
+      }
+      continue
+    }
     const was = matches(before, projectId, filter),
       is = matches(after, projectId, filter)
     if (!was && !is) continue

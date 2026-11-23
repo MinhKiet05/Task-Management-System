@@ -20,7 +20,7 @@ export function TaskEditor({
   initialStatus = 'TODO',
 }) {
   const [values, setValues] = useState(() => ({
-    ...taskForm(task, project.id),
+    ...taskForm(task, project?.id === 'all' ? '' : (project?.id ?? '')),
     ...(!task && { status: initialStatus }),
   }))
   const [errors, setErrors] = useState({})
