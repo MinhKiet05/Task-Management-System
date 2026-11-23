@@ -57,6 +57,8 @@ Tokens remain in memory, with no localStorage/sessionStorage persistence; page r
 
 ## Checks
 
+Global operation notifications use Sonner through `src/lib/notify.js`. Login/register/logout, project mutations, task list mutations and Kanban share one application-root Toaster. Field validation, destructive confirmations and persistent recovery/GET error states remain inline. See [toast notifications](docs/notifications.md) for usage, expiry deduplication, modal support, loading cleanup and verification.
+
 ```powershell
 npm run lint
 npm test

@@ -42,14 +42,7 @@ function TaskState({ resource, children }) {
   return children
 }
 
-function TaskScope({
-  project,
-  projects,
-  selectProject,
-  refreshProjects,
-  notice,
-  setNotice,
-}) {
+function TaskScope({ project, projects, selectProject, refreshProjects }) {
   const [query, setQuery] = useState(defaultTaskQuery)
   const [search, setSearch] = useState('')
   const [dialog, setDialog] = useState(null)
@@ -91,10 +84,7 @@ function TaskScope({
     summary.retry()
     overdue.retry()
   }
-  const quickStatus = useTaskMutation(() => {
-    setNotice('Đã cập nhật trạng thái công việc.')
-    refresh()
-  })
+  const quickStatus = useTaskMutation(refresh, 'status')
   const change = (name, value) =>
     setQuery((previous) => ({ ...previous, search, [name]: value, page: 0 }))
   const reset = () => {
@@ -134,13 +124,6 @@ function TaskScope({
     const creating = dialog?.type === 'create'
     const deleting = dialog?.type === 'delete'
     setDialog(null)
-    setNotice(
-      deleting
-        ? 'Đã xóa công việc.'
-        : creating
-          ? 'Đã thêm công việc.'
-          : 'Đã lưu công việc.',
-    )
     if (result?.projectId && result.projectId !== project.id) {
       selectProject(result.projectId)
       return
@@ -197,11 +180,6 @@ function TaskScope({
         <p className="task-archive-notice" role="status">
           Dự án đã lưu trữ: chỉ có thể xem công việc. Không thể thêm, sửa,
           chuyển, đổi trạng thái hoặc xóa.
-        </p>
-      )}
-      {notice && (
-        <p className="task-success" role="status">
-          {notice}
         </p>
       )}
       <section className="task-statistics" aria-label="Thống kê toàn bộ dự án">
@@ -444,7 +422,6 @@ function TaskScope({
 
 export function TaskWorkspace({ fixedProjectId }) {
   const navigate = useNavigate()
-  const [notice, setNotice] = useState('')
   const [params, setParams] = useSearchParams()
   const loadProjects = useCallback((signal) => tasksApi.projects(signal), [])
   const catalog = useApiResource(loadProjects, 'task-owned-projects')
@@ -485,8 +462,6 @@ export function TaskWorkspace({ fixedProjectId }) {
             projects={projects}
             selectProject={selectProject}
             refreshProjects={catalog.retry}
-            notice={notice}
-            setNotice={setNotice}
           />
         )}
       </TaskState>

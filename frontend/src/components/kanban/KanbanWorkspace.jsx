@@ -50,8 +50,6 @@ function ProjectBoard({
   revision,
   onChanged,
   onOpen,
-  notice,
-  setNotice,
 }) {
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
@@ -71,10 +69,9 @@ function ProjectBoard({
   const mutation = useTaskMutation((task) => {
     setOptimistic(null)
     onChanged(task, 'status')
-  })
+  }, 'status')
   function move(task, status) {
     if (!canMove(task, status, locked, mutation.pending || optimistic)) return
-    setNotice('')
     void mutation.run(async (signal) => {
       setOptimistic({ task, status })
       try {
@@ -188,11 +185,6 @@ function ProjectBoard({
           thái hoặc xóa công việc.
         </p>
       )}
-      {notice && (
-        <p className="task-success" role="status">
-          {notice}
-        </p>
-      )}
       {pending && (
         <p className="kanban-pending" role="status">
           Đang lưu trạng thái… Các số đếm sẽ được tải lại sau khi lưu.
@@ -269,7 +261,6 @@ export function KanbanWorkspace() {
   const [params, setParams] = useSearchParams()
   const [revision, setRevision] = useState(0)
   const [taskId, setTaskId] = useState(null)
-  const [notice, setNotice] = useState('')
   const loadProjects = useCallback((signal) => tasksApi.projects(signal), [])
   const catalog = useApiResource(loadProjects, 'kanban-owned-projects')
   const projects = catalog.data || []
@@ -278,16 +269,8 @@ export function KanbanWorkspace() {
     ? projects.find((item) => item.id === requested)
     : projects.find((item) => item.status === 'ACTIVE') || projects[0]
   const selectProject = (id) => setParams({ projectId: id }, { replace: true })
-  function changed(task, action) {
+  function changed(task) {
     setRevision((value) => value + 1)
-    setNotice(
-      {
-        create: 'Đã thêm công việc.',
-        edit: 'Đã lưu thay đổi công việc.',
-        status: 'Đã cập nhật trạng thái.',
-        delete: 'Đã xóa công việc.',
-      }[action] || '',
-    )
     if (task?.projectId && task.projectId !== project?.id)
       selectProject(task.projectId)
   }
@@ -331,8 +314,6 @@ export function KanbanWorkspace() {
           revision={revision}
           onChanged={changed}
           onOpen={setTaskId}
-          notice={notice}
-          setNotice={setNotice}
         />
       )}
       {taskId && catalog.status === 'success' && (

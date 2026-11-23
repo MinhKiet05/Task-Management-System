@@ -24,7 +24,7 @@ export function TaskEditor({
     ...(!task && { status: initialStatus }),
   }))
   const [errors, setErrors] = useState({})
-  const mutation = useTaskMutation(onSuccess)
+  const mutation = useTaskMutation(onSuccess, task ? 'update' : 'create')
   const combined = { ...mutation.fieldErrors, ...errors }
   const change = (event) => {
     const { name, value } = event.target

@@ -1,5 +1,11 @@
 // Framework-independent lifecycle; the existing token store remains authoritative.
-export function createAuthSession({ tokens, getCurrentUser, revokeSession }) {
+export function createAuthSession({
+  tokens,
+  getCurrentUser,
+  revokeSession,
+  onLogoutSuccess = () => {},
+  onLogoutFailure = () => {},
+}) {
   let token = tokens.getAccessToken()
   let snapshot = {
     user: null,
@@ -75,6 +81,7 @@ export function createAuthSession({ tokens, getCurrentUser, revokeSession }) {
       .then(() => {
         if (token !== requestedToken) return !token
         tokens.clearAccessToken()
+        onLogoutSuccess()
         return true
       })
       .catch((error) => {
@@ -88,6 +95,7 @@ export function createAuthSession({ tokens, getCurrentUser, revokeSession }) {
           logoutError:
             'Chưa thể thu hồi phiên đăng nhập. Vui lòng kiểm tra kết nối và thử đăng xuất lại.',
         })
+        onLogoutFailure()
         return false
       })
       .finally(() => {

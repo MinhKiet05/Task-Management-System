@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { clearAccessToken, getAccessToken } from './tokenStore.js'
 
-export function createApiClient(baseURL) {
+export function createApiClient(baseURL, { onSessionExpired = () => {} } = {}) {
   const client = axios.create({
     baseURL,
     timeout: 15000,
@@ -38,6 +38,7 @@ export function createApiClient(baseURL) {
         token &&
         sentToken === `Bearer ${token}`
       ) {
+        onSessionExpired()
         clearAccessToken()
       }
       return Promise.reject(error)

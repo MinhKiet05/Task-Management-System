@@ -6,8 +6,7 @@ import { PasswordRequirements } from './PasswordRequirements.jsx'
 
 export function AuthForm({ mode }) {
   const register = mode === 'register'
-  const { values, errors, errorMessage, pending, change, blur, submit } =
-    useAuthForm(mode)
+  const { values, errors, pending, change, blur, submit } = useAuthForm(mode)
   const shared = { onChange: change, onBlur: blur }
   return (
     <>
@@ -31,12 +30,6 @@ export function AuthForm({ mode }) {
         noValidate
         aria-busy={pending}
       >
-        {errorMessage && (
-          <div className="auth-error" role="alert">
-            <AuthIcon name="alert" />
-            <p>{errorMessage}</p>
-          </div>
-        )}
         <fieldset disabled={pending}>
           <legend className="sr-only">
             {register ? 'Thông tin đăng ký' : 'Thông tin đăng nhập'}
@@ -81,7 +74,7 @@ export function AuthForm({ mode }) {
                 register ? 'Tạo mật khẩu của bạn' : 'Nhập mật khẩu của bạn'
               }
               value={values.password}
-              error={errors.password} 
+              error={errors.password}
               hintId={register ? 'password-requirements' : undefined}
             />
             {register && <PasswordRequirements password={values.password} />}

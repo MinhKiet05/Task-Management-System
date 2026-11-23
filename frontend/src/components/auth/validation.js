@@ -1,3 +1,5 @@
+import { apiErrorMessage } from '../../lib/apiErrorMessage.js'
+
 export function passwordRequirements(password) {
   return [
     { label: 'Ít nhất 12 ký tự', met: [...password].length >= 12 },
@@ -35,19 +37,7 @@ export function validateAuth(values, mode) {
 }
 
 export function authErrorMessage(error, mode) {
-  if (!error.response)
-    return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối và thử lại.'
-  const status = error.response.status
-  if (status === 401)
-    return 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.'
-  if (status === 409 && mode === 'register')
-    return 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.'
-  if (status === 429)
-    return 'Bạn đã thử quá nhiều lần. Vui lòng đợi một lát rồi thử lại.'
-  if (status === 400)
-    return 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại biểu mẫu.'
-  if (status === 403) return 'Yêu cầu chưa được cho phép. Vui lòng thử lại sau.'
-  return 'Chưa thể hoàn tất yêu cầu. Vui lòng thử lại sau.'
+  return apiErrorMessage(error, mode)
 }
 
 export function authFieldErrors(error) {

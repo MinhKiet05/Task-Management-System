@@ -3,7 +3,7 @@ import { useProjectMutation } from '../../hooks/useProjectMutation.js'
 import { ProjectDialog } from './ProjectDialog.jsx'
 
 export function ProjectConfirmation({ project, action, onClose, onSuccess }) {
-  const mutation = useProjectMutation(onSuccess)
+  const mutation = useProjectMutation(onSuccess, action)
   const deleting = action === 'delete'
   return (
     <ProjectDialog
