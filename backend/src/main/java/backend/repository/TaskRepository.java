@@ -17,6 +17,17 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
+    @Query(value = """
+            SELECT count(*) AS "totalTasks",
+                   count(*) FILTER (WHERE t.status = 'TODO') AS "todoTasks",
+                   count(*) FILTER (WHERE t.status = 'IN_PROGRESS') AS "inProgressTasks",
+                   count(*) FILTER (WHERE t.status = 'DONE') AS "doneTasks"
+            FROM public.tasks t JOIN public.projects p ON p.id = t.project_id
+            WHERE p.owner_id = :ownerId
+              AND (CAST(:projectId AS uuid) IS NULL OR p.id = CAST(:projectId AS uuid))
+            """, nativeQuery = true)
+    DashboardCounts summarizeOwnedTasks(@Param("ownerId") UUID ownerId, @Param("projectId") UUID projectId);
+
     @EntityGraph(attributePaths = "project")
     Optional<Task> findByIdAndProject_Owner_Id(UUID id, UUID ownerId);
 

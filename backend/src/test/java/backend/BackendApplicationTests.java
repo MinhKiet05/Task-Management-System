@@ -19,6 +19,7 @@ class BackendApplicationTests {
     @MockitoBean private RlsContext rlsContext;
     @MockitoBean private ProjectService projectService;
     @MockitoBean private backend.service.TaskService taskService;
+    @MockitoBean private backend.service.DashboardService dashboardService;
 
     @Test
     void contextLoads() {

@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
+    boolean existsByIdAndOwner_Id(UUID id, UUID ownerId);
+
     Optional<Project> findByIdAndOwner_Id(UUID id, UUID ownerId);
 
     Page<Project> findAllByOwner_Id(UUID ownerId, Pageable pageable);
