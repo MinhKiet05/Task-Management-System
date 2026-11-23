@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
-export function usePageTitle(title) {
+export function usePageTitle(title, brand = 'Task Management System') {
   useEffect(() => {
-    document.title = `${title} | Task Management System`
-  }, [title])
+    document.title = `${title} | ${brand}`
+  }, [title, brand])
 }

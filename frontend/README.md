@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. The six pages are placeholders, ready to replace with Google Stitch designs. Authentication forms, route guards, CRUD, dashboard data and Kanban interactions are deferred.
+FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. FE-05 adds project management. FE-06 adds project-scoped task management. FE-07 adds a Kanban board with incremental column loading, drag-and-drop status updates, keyboard alternatives and an editable task details drawer.
 
 ## Local setup
 
@@ -35,21 +35,29 @@ src/
   routes/       Route definitions
 ```
 
-Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404. Pages are accessible previews and make no API requests. No frontend route authorization is implemented yet; backend authorization remains required for every protected request.
+Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/tasks/:taskId`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404 inside the protected shell. Workspace routes require an authenticated user and redirect to `/login` otherwise. The dashboard reads real summary/deadline/project data and task links open a read-only detail page. Backend authorization remains required for every protected API request. See [FE-03 application layout](docs/application-layout.md) and [FE-04 dashboard](docs/dashboard.md).
+
+Project cards now open `/projects/:projectId/tasks`. Project search/status filtering/date sorting apply only to the loaded API page and are explicitly labeled. Project CRUD/archiving use real API endpoints with full PUT payloads and confirmation dialogs. See [FE-05 project management](docs/projects.md) for supported behavior, limitations and verification.
+
+`/tasks` and `/projects/:projectId/tasks` share the task workspace. Select an owned project to view its tasks and counts; there is no global task-list endpoint or cross-project pagination. Task search, status/priority filters, sorting and pagination run on the backend for the selected project. See [FE-06 task management](docs/tasks.md) for request contracts, archived restrictions, date handling and verification.
+
+`/kanban` shows one owned project in three status columns, with server-side title/priority filtering, accurate filtered totals and explicit per-column loading of 20 tasks at a time. Cards open a right-side details drawer; create/edit/delete reuse the existing task dialogs. Dragging persists status through the backend, with pending/rollback behavior and a keyboard-accessible status selector. See [FE-07 Kanban and task drawer](docs/kanban.md) for loading limits, ordering, accessibility and verification.
 
 ## API and token handling
 
 The live [OpenAPI specification](https://task-management-system-i7xu.onrender.com/v3/api-docs) was inspected on 2026-11-23. It describes 20 operations and the `bearerAuth` HTTP bearer scheme. Register/login return `accessToken`, `tokenType`, `expiresAt` and `user`. Tokens require an active backend session. Logout revokes that session; there is no refresh-token endpoint.
 
-Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. No endpoint integrations are implemented by FE-01. Consult the actual specification again when adding them.
+Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. The frontend uses all four for the authentication lifecycle. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. Consult the actual specification again when adding further integrations.
 
 Future API modules should import `apiClient` from `src/api/client.js` and use relative paths beginning with `/api/`. The client supplies JSON accept headers, a 15-second timeout and the current bearer token. It rejects absolute URLs and base-URL overrides to keep tokens on the configured backend. Errors remain Axios errors, preserving the backend response/status for later form and notification handling. Do not log Axios errors/config objects because they can contain authorization headers.
 
-`useAuth()` exposes `setAccessToken`, `clearAccessToken` and `hasAccessToken`. After a future successful login, call `setAccessToken(response.data.accessToken)`. Token presence is not proof of authentication; `/api/auth/me` must establish the user in the later authentication flow. Never decode an unverified JWT to authorize access.
+`useAuth()` exposes current `user`, lifecycle `status`, `completeAuthentication`, `logout`, `retryUser` and the existing token helpers. Successful registration/login stores the returned access token and user, then navigates to `/dashboard`. A token without user data triggers one deduplicated `/api/auth/me` request. Token presence alone does not expose protected content. Never decode an unverified JWT to authorize access.
 
-Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads clear them. A 401 clears the matching current token; late failures from an older token do not clear a newer session. A 403 or network error preserves the token. There is no automatic redirect, refresh or retry. Clearing local state is not server logout: the future logout flow must call the documented endpoint with the current token before clearing it.
+Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads return to login. A 401 clears the matching current token and user; late failures from an older token do not clear a newer session. Backend-returned access-token expiry also clears the session. A 403 or network error preserves the token. There is no automatic refresh. Logout sends the current bearer token to the backend before clearing local state and redirecting. Failed revocation stays visible and retryable rather than claiming server logout succeeded.
 
 ## Checks
+
+Global operation notifications use Sonner through `src/lib/notify.js`. Login/register/logout, project mutations, task list mutations and Kanban share one application-root Toaster. Field validation, destructive confirmations and persistent recovery/GET error states remain inline. See [toast notifications](docs/notifications.md) for usage, expiry deduplication, modal support, loading cleanup and verification.
 
 ```powershell
 npm run lint
@@ -62,7 +70,7 @@ Unit tests use Node's built-in runner and Axios adapters, covering configuration
 
 ## Google Stitch integration
 
-Replace the corresponding `pages/` content and share repeated controls in `components/`. Keep routing in `routes/`, application shells in `layouts/` and HTTP calls in `api/`. Tailwind v4 uses `@tailwindcss/vite` and `@import "tailwindcss"` in `src/index.css`; add design tokens to its `@theme` block. Do not paste CDN scripts, duplicate HTML roots or Stitch-generated token storage into components. Existing styles use system fonts without third-party font requests.
+Replace the corresponding `pages/` content and share repeated controls in `components/`. Keep routing in `routes/`, application shells in `layouts/` and HTTP calls in `api/`. Tailwind v4 uses `@tailwindcss/vite` and `@import "tailwindcss"` in `src/index.css`; add design tokens to its `@theme` block. Do not paste CDN scripts, duplicate HTML roots or Stitch-generated token storage into components. Authentication styles are scoped in `components/auth/auth.css` and use self-hosted Inter with its OFL license in `assets/fonts/`; other pages retain their existing styles. No runtime font service is used.
 
 ## Vercel configuration
 
@@ -87,3 +95,72 @@ Executed locally on Windows with Node 22.17.0:
 - A temporary Playwright/headless Edge smoke check against the production preview passed for all six placeholder routes, the root redirect and 404 at 1440px and 375px widths. Navigation, direct visits, reloads, page titles and horizontal overflow were checked; no browser errors or external API requests occurred. Browser tooling is not a project dependency.
 
 The Vercel rewrite is configured but has not been verified on a live deployment. Login, backend CORS and authenticated API flows remain outside FE-01.
+
+## Centered TaskFlow authentication redesign
+
+Login/register share a single-column, 440px maximum-width layout with indigo actions, a lavender gradient, Vietnamese text and minimal branding/footer. No statistics, company information, compliance claims, SSO labels, remember-me control or empty second column is included.
+
+Shared fields provide password visibility toggles, accessible labels/errors, validation, pending states and disabled duplicate submissions. Registration confirms passwords locally and sends only `name`, `email` and `password`. Password rules match the actual backend: at least 12 Unicode code points for registration, at most 72 UTF-8 bytes, nonblank and no NUL characters. No uppercase, digit or special-character rule is invented. Existing shorter passwords can still be used for login. Email is trimmed/lowercased; passwords are never trimmed. API errors are translated into Vietnamese without displaying raw server diagnostics. Navigating away aborts an in-flight submission.
+
+Verification performed after this redesign: lint passed, all 27 unit tests passed and the production build succeeded. Headless Edge checked both routes at 375/768/1024/1440px, centered positioning, absence of overflow/promotional panels, short-screen scrolling, visibility toggles, loading, confirmation validation, normalized request payloads, navigation and mocked 200/201/400/401/409 responses. No React errors occurred. All authentication requests in verification were intercepted locally; no production login or account creation was performed. Live backend CORS and real credential flows still require a separately authorized check.
+
+Changed source files: `layouts/AuthLayout.jsx`, `pages/LoginPage.jsx`, `pages/RegisterPage.jsx`, `hooks/usePageTitle.js`; new `hooks/useAuthForm.js`, `api/auth.js`, shared `components/auth/` files, Inter font/license and `tests/authValidation.test.js`. Routes, shared token storage, backend code and migrations were not changed.
+
+## Frontend performance optimization
+
+Previously, `useApiResource` discarded data on unmount and replaced content with loading states on every retry. Task writes retried list/statistics reads, project writes reloaded pages, and the Kanban revision counter recreated all three columns after each write. Its single pending flag also blocked every card. Separate project-catalog and task-detail keys duplicated equivalent requests between screens.
+
+One TanStack Query client now owns authenticated read data. Keys in `src/query/keys.js` include each endpoint's scope, filters, sort and pagination. Dashboard project pages (size 4) remain distinct from project-management pages (size 9); all-project metadata is shared by Tasks and Kanban. Drawer and standalone task details share one key. `/auth/me` also uses this client, and authentication responses seed its user data.
+
+- Fresh data is reused for 30 seconds; unused queries are collected after five minutes. No persistence, polling or window-focus refetch is enabled. Reconnection can revalidate stale data. Network GET failures retry once; HTTP errors and canceled requests do not retry. Writes are never automatically retried.
+- Each token change synchronously aborts pending writes, cancels reads and clears all caches. Keys carry a monotonically increasing session generation, never the JWT. Late results cannot populate a new user's cache. Failed logout keeps the current session intact, matching the existing authentication behavior.
+- Axios receives query abort signals. Affected reads pause during writes so late GET responses cannot overwrite optimistic changes. Other projects and other cards can continue working. Writes to the same entity are locked across components; task writes and changes to their parent project cannot race locally.
+- Status changes immediately apply a per-task delta to existing task lists, task details and Kanban columns, including matching totals. Actual PATCH responses supply completion/update timestamps. Failure reverses only that entity's delta, retaining concurrent changes to other tasks, then revalidates affected data to resolve an uncertain server outcome. Sonner still handles progress, success and translated errors through the existing utility.
+- Create/edit/delete use actual API responses. New rows are not arbitrarily inserted into sorted task/project pages. Membership changes, offset gaps and changed sort fields mark affected pages stale for background revalidation. Filters and current pages survive writes; deleting the last item can move back one page. Complete Kanban columns can be updated directly; incomplete prefixes accept only known sorted positions and revalidate gaps before loading the next offset. Timestamp ordering retains PostgreSQL submillisecond precision.
+- Project edits/archive update existing project rows and the complete owned-project catalog directly. Archive restrictions continue to derive from server project status and backend authorization. Project deletion removes dependent task caches and invalidates affected dashboard data. Dashboard numbers and deadline membership come from the server; affected global/project queries are marked stale without inventing statistics or timezone calculations.
+- Initial loads retain skeletons. Background loads keep content mounted, with Vietnamese synchronization/retry indicators. No cross-filter/page placeholder data is shown. Manual refresh still works without blanking the current data.
+
+Measured with the isolated browser fixture (not production timing):
+
+| Interaction | Previous behavior | Verified behavior |
+| --- | --- | --- |
+| Successful Kanban move, both columns fully loaded | PATCH + reload all 3 columns | 1 PATCH, 0 column GETs |
+| Move from a partially loaded column | Reload all 3 columns | 1 PATCH + 1 affected-column refill GET in the fixture |
+| Project edit | PUT + project-page GET | 1 PUT, 0 project GETs; catalog also updates |
+| Tasks → Kanban within freshness window | Repeat all-project metadata GET | Shared catalog, 0 additional catalog GETs |
+| Reopen details after a successful write | Fetch task details again | Reuse the actual mutation response |
+
+These reductions exclude necessary dashboard revalidation. Failed/uncertain writes intentionally revalidate affected data, and incomplete or filtered/sorted pages may need additional GETs. Render cold starts, network latency, the existing 15-second Axios timeout, initial all-project metadata pagination and very large boards remain limitations. There is no realtime cross-browser subscription: external changes become visible through stale-query revalidation, reconnect or manual refresh. The main bundle is about 469 kB raw / 146 kB gzip; Kanban remains a separate lazy chunk, about 116 kB raw / 38 kB gzip.
+
+Verification commands:
+
+```powershell
+cd frontend
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+For the optional isolated browser check, install temporary tooling (not a project dependency), start the production preview in one terminal, then run the script in another. It requires installed Microsoft Edge and intercepts all external traffic, including authentication; no real accounts or backend writes are used. The fixture expects the documented API origin and local preview port 4173.
+
+Actual results on Windows / Node 22.17.0: all 121 tests passed (including 15 new cache tests), zero failures/skips; ESLint and the production build passed. The headless Edge script passed all six check groups: pointer drag/request reduction, concurrent success/rollback/toast, cross-route/detail reuse, project edit/background visibility, partial-column refill/pagination, and logout/new-session cache isolation. No production performance measurement, authentication, database connection, deployment or push was performed.
+
+```powershell
+npm install --no-save --package-lock=false playwright
+node node_modules/vite/bin/vite.js preview --host=127.0.0.1 --port=4173 --strictPort
+# Second terminal, also in frontend:
+node scripts/performance-smoke.mjs
+```
+
+Files changed for this optimization (relative to `frontend/`):
+
+- Dependencies/tooling: `package.json`, `package-lock.json`, `eslint.config.js`.
+- New cache modules: `src/query/client.js`, `keys.js`, `mutations.js`, `resourceState.js`.
+- Shared wiring: `src/main.jsx`, `src/contexts/AuthProvider.jsx`, `src/api/auth.js`, `projects.js`, `tasks.js`.
+- Hooks: `src/hooks/useApiResource.js`, `useKanbanColumn.js`, `useNotifiedMutation.js`, `useTaskMutation.js`.
+- Pages: `src/pages/DashboardPage.jsx`, `ProjectsPage.jsx`, `TaskDetailsPage.jsx`.
+- Components: new `src/components/BackgroundSync.jsx`; updated `dashboard/ResourceState.jsx`, `dashboard/SummaryCards.jsx`, `tasks/TaskWorkspace.jsx`, `kanban/KanbanWorkspace.jsx`, `kanban/KanbanColumn.jsx`, `kanban/TaskDrawer.jsx`, `kanban/kanbanModel.js`.
+- Verification/documentation: new `tests/queryCache.test.js`, `scripts/performance-smoke.mjs`; this `README.md`.
+
+Reference for the adopted cache/cancellation/optimistic-update concepts: [TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates).
