@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/tasks/*").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/tasks/*/status").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/tasks/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/summary", "/api/dashboard/upcoming", "/api/dashboard/overdue").authenticated()
                         // Business routes are introduced only with their own authorization rules.
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptions -> exceptions
