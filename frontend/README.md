@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. The six pages are placeholders, ready to replace with Google Stitch designs. Authentication forms, route guards, CRUD, dashboard data and Kanban interactions are deferred.
+FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register now use centered Vietnamese TaskFlow forms; workspace pages remain placeholders. Route guards, CRUD, dashboard data and Kanban interactions are deferred.
 
 ## Local setup
 
@@ -35,17 +35,17 @@ src/
   routes/       Route definitions
 ```
 
-Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404. Pages are accessible previews and make no API requests. No frontend route authorization is implemented yet; backend authorization remains required for every protected request.
+Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404. Workspace pages are accessible previews and make no API requests. Login/register submit to the existing authentication API. No frontend route authorization is implemented yet; backend authorization remains required for every protected request.
 
 ## API and token handling
 
 The live [OpenAPI specification](https://task-management-system-i7xu.onrender.com/v3/api-docs) was inspected on 2026-11-23. It describes 20 operations and the `bearerAuth` HTTP bearer scheme. Register/login return `accessToken`, `tokenType`, `expiresAt` and `user`. Tokens require an active backend session. Logout revokes that session; there is no refresh-token endpoint.
 
-Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. No endpoint integrations are implemented by FE-01. Consult the actual specification again when adding them.
+Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. The auth UI uses register/login only. Consult the actual specification again when adding further integrations.
 
 Future API modules should import `apiClient` from `src/api/client.js` and use relative paths beginning with `/api/`. The client supplies JSON accept headers, a 15-second timeout and the current bearer token. It rejects absolute URLs and base-URL overrides to keep tokens on the configured backend. Errors remain Axios errors, preserving the backend response/status for later form and notification handling. Do not log Axios errors/config objects because they can contain authorization headers.
 
-`useAuth()` exposes `setAccessToken`, `clearAccessToken` and `hasAccessToken`. After a future successful login, call `setAccessToken(response.data.accessToken)`. Token presence is not proof of authentication; `/api/auth/me` must establish the user in the later authentication flow. Never decode an unverified JWT to authorize access.
+`useAuth()` exposes `setAccessToken`, `clearAccessToken` and `hasAccessToken`. Successful registration/login stores the returned access token in the existing memory store and navigates to `/dashboard`. Token presence is not proof of authorization; `/api/auth/me` remains available for future current-user state. Never decode an unverified JWT to authorize access.
 
 Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads clear them. A 401 clears the matching current token; late failures from an older token do not clear a newer session. A 403 or network error preserves the token. There is no automatic redirect, refresh or retry. Clearing local state is not server logout: the future logout flow must call the documented endpoint with the current token before clearing it.
 
@@ -62,7 +62,7 @@ Unit tests use Node's built-in runner and Axios adapters, covering configuration
 
 ## Google Stitch integration
 
-Replace the corresponding `pages/` content and share repeated controls in `components/`. Keep routing in `routes/`, application shells in `layouts/` and HTTP calls in `api/`. Tailwind v4 uses `@tailwindcss/vite` and `@import "tailwindcss"` in `src/index.css`; add design tokens to its `@theme` block. Do not paste CDN scripts, duplicate HTML roots or Stitch-generated token storage into components. Existing styles use system fonts without third-party font requests.
+Replace the corresponding `pages/` content and share repeated controls in `components/`. Keep routing in `routes/`, application shells in `layouts/` and HTTP calls in `api/`. Tailwind v4 uses `@tailwindcss/vite` and `@import "tailwindcss"` in `src/index.css`; add design tokens to its `@theme` block. Do not paste CDN scripts, duplicate HTML roots or Stitch-generated token storage into components. Authentication styles are scoped in `components/auth/auth.css` and use self-hosted Inter with its OFL license in `assets/fonts/`; other pages retain their existing styles. No runtime font service is used.
 
 ## Vercel configuration
 
@@ -87,3 +87,13 @@ Executed locally on Windows with Node 22.17.0:
 - A temporary Playwright/headless Edge smoke check against the production preview passed for all six placeholder routes, the root redirect and 404 at 1440px and 375px widths. Navigation, direct visits, reloads, page titles and horizontal overflow were checked; no browser errors or external API requests occurred. Browser tooling is not a project dependency.
 
 The Vercel rewrite is configured but has not been verified on a live deployment. Login, backend CORS and authenticated API flows remain outside FE-01.
+
+## Centered TaskFlow authentication redesign
+
+Login/register share a single-column, 440px maximum-width layout with indigo actions, a lavender gradient, Vietnamese text and minimal branding/footer. No statistics, company information, compliance claims, SSO labels, remember-me control or empty second column is included.
+
+Shared fields provide password visibility toggles, accessible labels/errors, validation, pending states and disabled duplicate submissions. Registration confirms passwords locally and sends only `name`, `email` and `password`. Password rules match the actual backend: at least 12 Unicode code points for registration, at most 72 UTF-8 bytes, nonblank and no NUL characters. No uppercase, digit or special-character rule is invented. Existing shorter passwords can still be used for login. Email is trimmed/lowercased; passwords are never trimmed. API errors are translated into Vietnamese without displaying raw server diagnostics. Navigating away aborts an in-flight submission.
+
+Verification performed after this redesign: lint passed, all 27 unit tests passed and the production build succeeded. Headless Edge checked both routes at 375/768/1024/1440px, centered positioning, absence of overflow/promotional panels, short-screen scrolling, visibility toggles, loading, confirmation validation, normalized request payloads, navigation and mocked 200/201/400/401/409 responses. No React errors occurred. All authentication requests in verification were intercepted locally; no production login or account creation was performed. Live backend CORS and real credential flows still require a separately authorized check.
+
+Changed source files: `layouts/AuthLayout.jsx`, `pages/LoginPage.jsx`, `pages/RegisterPage.jsx`, `hooks/usePageTitle.js`; new `hooks/useAuthForm.js`, `api/auth.js`, shared `components/auth/` files, Inter font/license and `tests/authValidation.test.js`. Routes, shared token storage, backend code and migrations were not changed.

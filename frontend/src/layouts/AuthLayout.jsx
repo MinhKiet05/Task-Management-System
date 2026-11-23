@@ -1,35 +1,47 @@
 import { Link, Outlet } from 'react-router'
-import { Brand } from '../components/Brand.jsx'
+import { useEffect } from 'react'
+import '../components/auth/auth.css'
 
 export function AuthLayout() {
+  useEffect(() => {
+    const previousLanguage = document.documentElement.lang
+    document.documentElement.lang = 'vi'
+    return () => {
+      document.documentElement.lang = previousLanguage
+    }
+  }, [])
   return (
-    <div className="min-h-dvh bg-white lg:grid lg:grid-cols-2">
-      <aside className="flex flex-col bg-blue-50 p-8 sm:p-12 lg:p-16">
-        <Brand />
-        <div className="my-auto py-12 lg:py-20">
-          <p className="eyebrow">Less noise. More progress.</p>
-          <h2 className="mt-5 max-w-md text-4xl leading-tight font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Good work starts
-            <br />
-            with a clear plan.
-          </h2>
-          <p className="mt-6 max-w-sm leading-7 text-slate-600">
-            One place for your projects, your priorities, and your next big
-            idea.
-          </p>
-        </div>
+    <div className="auth-shell">
+      <a className="auth-skip" href="#auth-content">
+        Chuyển đến biểu mẫu
+      </a>
+      <header className="auth-header">
         <Link
-          to="/dashboard"
-          className="text-sm font-medium text-blue-700 hover:underline"
+          to="/login"
+          className="auth-brand"
+          aria-label="TaskFlow — Trang đăng nhập"
         >
-          Explore the workspace &rarr;
+          <span className="auth-brand-mark" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            >
+              <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+            </svg>
+          </span>
+          TaskFlow
         </Link>
-      </aside>
-      <main className="flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
+      </header>
+      <main id="auth-content" className="auth-main" tabIndex={-1}>
+        <section className="auth-panel" aria-labelledby="auth-title">
           <Outlet />
-        </div>
+        </section>
       </main>
+      <footer className="auth-footer">
+        © {new Date().getFullYear()} TaskFlow. Mọi quyền được bảo lưu.
+      </footer>
     </div>
   )
 }
