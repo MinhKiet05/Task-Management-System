@@ -1,3 +1,4 @@
+import { keys } from '../../query/keys.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { tasksApi } from '../../api/tasks.js'
 import { useApiResource } from '../../hooks/useApiResource.js'
@@ -22,7 +23,7 @@ export function TaskDrawer({
   const dialog = useRef(null)
   const [mode, setMode] = useState(null)
   const load = useCallback((signal) => tasksApi.get(taskId, signal), [taskId])
-  const resource = useApiResource(load, `kanban-detail-${taskId}`)
+  const resource = useApiResource(load, keys.task(taskId))
   const task = resource.data
   const project = projects.find((item) => item.id === task?.projectId)
   const locked = project?.status !== 'ACTIVE'
@@ -182,7 +183,6 @@ export function TaskDrawer({
           onClose={() => setMode(null)}
           onSuccess={(result) => {
             setMode(null)
-            resource.retry()
             onChanged(result, 'edit')
           }}
         />

@@ -1,3 +1,5 @@
+import { keys } from '../query/keys.js'
+import { BackgroundSync } from '../components/BackgroundSync.jsx'
 import { useCallback, useMemo, useState } from 'react'
 import { projectsApi } from '../api/projects.js'
 import { useApiResource } from '../hooks/useApiResource.js'
@@ -19,7 +21,7 @@ export function ProjectsPage() {
   const [sort, setSort] = useState('createdAt:desc')
   const [dialog, setDialog] = useState(null)
   const load = useCallback((signal) => projectsApi.list(page, signal), [page])
-  const resource = useApiResource(load, `projects-${page}`)
+  const resource = useApiResource(load, keys.projects(page))
   const projects = useMemo(
     () => visibleProjects(resource.data?.content || [], search, status, sort),
     [resource.data, search, status, sort],
@@ -30,18 +32,15 @@ export function ProjectsPage() {
     setDialog({ action, project })
   }
   function saved() {
-    const action = dialog.action
+    const deletingLast =
+      dialog.action === 'delete' && resource.data?.content.length === 1
     setDialog(null)
-    if (action === 'create') {
-      setPage(0)
-      setSearch('')
-      setStatus('ALL')
-    }
-    resource.retry()
+    if (deletingLast && page > 0) setPage(page - 1)
   }
 
   return (
     <div className="projects-page">
+      <BackgroundSync resource={resource} />
       <header className="projects-heading">
         <div>
           <span className="projects-eyebrow">Không gian cá nhân</span>

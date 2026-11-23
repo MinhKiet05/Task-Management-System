@@ -4,26 +4,33 @@ import { notify } from '../lib/notify.js'
 import { startOperationNotification } from '../lib/operationNotification.js'
 import { mutationRecovery } from '../lib/apiErrorMessage.js'
 
-export function useNotifiedMutation(onSuccess, fieldsFor, operation) {
+export function useNotifiedMutation(
+  onSuccess,
+  fieldsFor,
+  operation,
+  concurrent = false,
+) {
   const [state, setState] = useState({
     pending: false,
     error: '',
     fieldErrors: {},
   })
-  const request = useRef(null)
+  const request = useRef(new Map())
   useEffect(
     () => () => {
-      request.current?.controller.abort()
-      request.current?.feedback.cancel()
+      request.current.forEach(({ controller, feedback }) => {
+        controller.abort()
+        feedback.cancel()
+      })
     },
     [],
   )
   async function run(action) {
-    if (request.current) return
+    if (!concurrent && request.current.size) return
     const controller = new AbortController()
     const token = getAccessToken()
     const feedback = startOperationNotification(notify, operation)
-    request.current = { controller, feedback }
+    request.current.set(controller, { controller, feedback })
     setState({ pending: true, error: '', fieldErrors: {} })
     try {
       const result = await action(controller.signal)
@@ -32,7 +39,11 @@ export function useNotifiedMutation(onSuccess, fieldsFor, operation) {
         onSuccess(result)
       }
     } catch (error) {
-      if (!controller.signal.aborted && token === getAccessToken()) {
+      if (
+        !controller.signal.aborted &&
+        token === getAccessToken() &&
+        error.code !== 'ERR_CANCELED'
+      ) {
         feedback.error(error)
         setState({
           pending: false,
@@ -42,9 +53,11 @@ export function useNotifiedMutation(onSuccess, fieldsFor, operation) {
       }
     } finally {
       feedback.cancel()
-      if (!controller.signal.aborted)
-        setState((previous) => ({ ...previous, pending: false }))
-      request.current = null
+      request.current.delete(controller)
+      setState((previous) => ({
+        ...previous,
+        pending: request.current.size > 0,
+      }))
     }
   }
   return { ...state, run }

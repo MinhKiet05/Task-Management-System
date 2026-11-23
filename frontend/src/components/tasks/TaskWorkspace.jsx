@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { keys } from '../../query/keys.js'
+import { BackgroundSync } from '../BackgroundSync.jsx'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTaskScopeResource } from '../../hooks/useTaskScopeResource.js'
+import { notify } from '../../lib/notify.js'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { tasksApi } from '../../api/tasks.js'
 import { useApiResource } from '../../hooks/useApiResource.js'
@@ -39,10 +43,17 @@ function TaskState({ resource, children }) {
         </button>
       </div>
     )
-  return children
+  return (
+    <>
+      <BackgroundSync resource={resource} />
+      {children}
+    </>
+  )
 }
 
 function TaskScope({ project, projects, selectProject, refreshProjects }) {
+  const all = project.id === 'all'
+  const scopeId = all ? null : project.id
   const [query, setQuery] = useState(defaultTaskQuery)
   const [search, setSearch] = useState('')
   const [dialog, setDialog] = useState(null)
@@ -63,28 +74,40 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
     )
     return () => clearTimeout(timer)
   }, [search])
-  const loadTasks = useCallback(
-    (signal) => tasksApi.list(project.id, query, signal),
-    [project.id, query],
-  )
   const loadSummary = useCallback(
-    (signal) => tasksApi.summary(project.id, signal),
-    [project.id],
+    (signal) => tasksApi.summary(scopeId ?? undefined, signal),
+    [scopeId],
   )
   const loadOverdue = useCallback(
-    (signal) => tasksApi.overdue(project.id, signal),
-    [project.id],
+    (signal) => tasksApi.overdue(scopeId ?? undefined, signal),
+    [scopeId],
   )
-  const tasks = useApiResource(loadTasks, JSON.stringify([project.id, query]))
-  const summary = useApiResource(loadSummary, `task-summary-${project.id}`)
-  const overdue = useApiResource(loadOverdue, `task-overdue-${project.id}`)
-  const locked = project.status !== 'ACTIVE'
+  const tasks = useTaskScopeResource(projects, project.id, query)
+  const summary = useApiResource(loadSummary, keys.summary(scopeId))
+  const overdue = useApiResource(loadOverdue, keys.overdue(scopeId, 0, 1))
+  const locked = all
+    ? !projects.some((item) => item.status === 'ACTIVE')
+    : project.status !== 'ACTIVE'
+  const failures = tasks.failures || []
+  const failureKey = failures
+    .map((failure) => `${failure.project.id}:${failure.at}`)
+    .join(',')
+  const notified = useRef('')
+  useEffect(() => {
+    if (failureKey && notified.current !== failureKey) {
+      notify.error('Chưa tải đủ công việc của tất cả dự án.', {
+        id: 'all-tasks-read-error',
+        description: 'Kiểm tra kết nối và thử lại các dự án tải lỗi.',
+      })
+      notified.current = failureKey
+    }
+  }, [failureKey])
   const refresh = () => {
     tasks.retry()
     summary.retry()
     overdue.retry()
   }
-  const quickStatus = useTaskMutation(refresh, 'status')
+  const quickStatus = useTaskMutation(() => {}, 'status')
   const change = (name, value) =>
     setQuery((previous) => ({ ...previous, search, [name]: value, page: 0 }))
   const reset = () => {
@@ -121,19 +144,14 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
     },
   ]
   function saved(result) {
-    const creating = dialog?.type === 'create'
     const deleting = dialog?.type === 'delete'
     setDialog(null)
-    if (result?.projectId && result.projectId !== project.id) {
+    if (!all && result?.projectId && result.projectId !== project.id) {
       selectProject(result.projectId)
       return
     }
-    if (creating) {
-      setSearch('')
-      setQuery({ ...defaultTaskQuery, size: query.size })
-    } else if (deleting && page?.content.length === 1 && query.page > 0)
+    if (deleting && page?.content.length === 1 && query.page > 0)
       setQuery((previous) => ({ ...previous, page: previous.page - 1 }))
-    refresh()
   }
   return (
     <>
@@ -160,6 +178,7 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           value={project.id}
           onChange={(event) => selectProject(event.target.value)}
         >
+          <option value="all">Tất cả dự án</option>
           {projects.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name}
@@ -174,7 +193,11 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
         >
           Tải lại dự án
         </button>
-        <p>Danh sách và thống kê chỉ thuộc dự án đã chọn.</p>
+        <p>
+          {all
+            ? 'Danh sách và thống kê thuộc tất cả dự án của bạn.'
+            : 'Danh sách và thống kê chỉ thuộc dự án đã chọn.'}
+        </p>
       </section>
       {locked && (
         <p className="task-archive-notice" role="status">
@@ -182,7 +205,10 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           chuyển, đổi trạng thái hoặc xóa.
         </p>
       )}
-      <section className="task-statistics" aria-label="Thống kê toàn bộ dự án">
+      <section
+        className="task-statistics"
+        aria-label={all ? 'Thống kê tất cả dự án' : 'Thống kê toàn bộ dự án'}
+      >
         {stats.map((item) => (
           <article
             key={item.kind}
@@ -204,9 +230,12 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           </article>
         ))}
       </section>
+      <BackgroundSync resource={summary} />
+      <BackgroundSync resource={overdue} />
       <p className="tasks-scope-note">
-        Thống kê toàn bộ dự án, không theo bộ lọc. Quá hạn được tính theo múi
-        giờ máy chủ; nhãn ngày trên từng công việc theo ngày địa phương của bạn.
+        {all ? 'Thống kê tất cả dự án' : 'Thống kê toàn bộ dự án'}, không theo
+        bộ lọc. Quá hạn được tính theo múi giờ máy chủ; nhãn ngày trên từng công
+        việc theo ngày địa phương của bạn.
       </p>
       <section className="task-filters" aria-label="Tìm kiếm và lọc công việc">
         <div className="task-search">
@@ -281,6 +310,13 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           <button className="project-button-secondary" onClick={reset}>
             Xóa bộ lọc
           </button>
+          <button
+            className="project-button-secondary"
+            onClick={refresh}
+            disabled={tasks.isFetching}
+          >
+            Tải lại công việc
+          </button>
         </div>
       </section>
       {quickStatus.error && (
@@ -294,6 +330,22 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
           Đang chờ tìm kiếm…
         </p>
       )}
+      {failures.length > 0 && (
+        <div className="project-error" role="alert">
+          <p>
+            Chưa tải đủ dữ liệu từ:{' '}
+            {failures.map((failure) => failure.project.name).join(', ')}.{' '}
+            {tasks.data
+              ? 'Đang giữ dữ liệu đã tải trước đó; danh sách có thể đã cũ.'
+              : 'Chưa thể hiển thị danh sách và tổng số đầy đủ.'}
+          </p>
+          <p>
+            Nếu dữ liệu vừa thay đổi trong lúc tải hoặc kết nối bị gián đoạn,
+            hãy thử tải lại.
+          </p>
+          <button onClick={tasks.retry}>Thử lại các dự án tải lỗi</button>
+        </div>
+      )}
       <TaskState resource={tasks}>
         {page && (
           <>
@@ -301,12 +353,17 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
               <TaskTable
                 tasks={page.content}
                 project={project}
+                projects={projects}
                 now={now}
                 pending={quickStatus.pending}
                 onEdit={(task) => setDialog({ type: 'edit', task })}
                 onDelete={(task) => setDialog({ type: 'delete', task })}
                 onStatus={(task, status) => {
-                  if (!locked && status !== task.status)
+                  if (
+                    projects.find((item) => item.id === task.projectId)
+                      ?.status === 'ACTIVE' &&
+                    status !== task.status
+                  )
                     void quickStatus.run((signal) =>
                       tasksApi.status(task.id, status, signal),
                     )
@@ -410,7 +467,11 @@ function TaskScope({ project, projects, selectProject, refreshProjects }) {
       {(dialog?.type === 'create' || dialog?.type === 'edit') && (
         <TaskEditor
           task={dialog.task}
-          project={project}
+          project={
+            dialog.task
+              ? projects.find((item) => item.id === dialog.task.projectId)
+              : project
+          }
           projects={projects}
           onClose={() => setDialog(null)}
           onSuccess={saved}
@@ -424,15 +485,19 @@ export function TaskWorkspace({ fixedProjectId }) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const loadProjects = useCallback((signal) => tasksApi.projects(signal), [])
-  const catalog = useApiResource(loadProjects, 'task-owned-projects')
+  const catalog = useApiResource(loadProjects, keys.catalog)
   usePageTitle('Việc của tôi', 'TaskFlow')
   const projects = catalog.data || []
-  const requested = fixedProjectId || params.get('projectId')
-  const project = requested
-    ? projects.find((item) => item.id === requested)
-    : projects.find((item) => item.status === 'ACTIVE') || projects[0]
+  const requested = fixedProjectId || params.get('projectId') || 'all'
+  const project =
+    requested === 'all'
+      ? { id: 'all', name: 'Tất cả dự án', status: 'ACTIVE' }
+      : projects.find((item) => item.id === requested)
   function selectProject(id) {
-    if (fixedProjectId) navigate(`/projects/${encodeURIComponent(id)}/tasks`)
+    if (fixedProjectId)
+      navigate(
+        id === 'all' ? '/tasks' : `/projects/${encodeURIComponent(id)}/tasks`,
+      )
     else setParams({ projectId: id }, { replace: true })
   }
   return (

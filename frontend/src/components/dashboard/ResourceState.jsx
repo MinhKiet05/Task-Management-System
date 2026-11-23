@@ -1,3 +1,5 @@
+import { BackgroundSync } from '../BackgroundSync.jsx'
+
 export function ResourceState({ resource, children, emptyMessage, onReset }) {
   if (resource.status === 'loading')
     return (
@@ -22,6 +24,7 @@ export function ResourceState({ resource, children, emptyMessage, onReset }) {
   if (emptyMessage && !resource.data.content.length)
     return (
       <div className="dashboard-empty">
+        <BackgroundSync resource={resource} />
         <p>{emptyMessage}</p>
         {onReset && (
           <button type="button" className="dashboard-refresh" onClick={onReset}>
@@ -30,5 +33,10 @@ export function ResourceState({ resource, children, emptyMessage, onReset }) {
         )}
       </div>
     )
-  return children
+  return (
+    <>
+      <BackgroundSync resource={resource} />
+      {children}
+    </>
+  )
 }

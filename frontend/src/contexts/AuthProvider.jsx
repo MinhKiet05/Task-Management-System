@@ -1,3 +1,5 @@
+import { queryClient, scopedKey } from '../query/client.js'
+import { keys } from '../query/keys.js'
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { AuthContext } from './AuthContext.js'
 import {
@@ -14,6 +16,10 @@ export function AuthProvider({ children }) {
     authSession.getSnapshot,
     authSession.getSnapshot,
   )
+  useEffect(() => {
+    if (session.user)
+      queryClient.setQueryData(scopedKey(keys.user), session.user)
+  }, [session.user])
   useEffect(() => {
     if (session.status === 'checking') void authSession.ensureUser()
   }, [session.status])

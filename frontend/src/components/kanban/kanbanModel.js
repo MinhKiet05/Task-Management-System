@@ -27,9 +27,14 @@ export function mergeTasks(previous, incoming) {
 }
 
 export function orderedTasks(tasks) {
+  const subMillisecond = (value) =>
+    (value?.match(/\.(\d+)(?:Z|[+-]\d{2}:\d{2})$/)?.[1] || '')
+      .padEnd(9, '0')
+      .slice(3)
   return [...tasks].sort(
     (a, b) =>
-      (b.createdAt || '').localeCompare(a.createdAt || '') ||
+      (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0) ||
+      subMillisecond(b.createdAt).localeCompare(subMillisecond(a.createdAt)) ||
       a.id.localeCompare(b.id),
   )
 }

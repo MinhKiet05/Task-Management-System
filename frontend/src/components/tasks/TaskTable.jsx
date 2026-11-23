@@ -9,18 +9,20 @@ import { dueIndicator, taskStatuses } from './taskModel.js'
 export function TaskTable({
   tasks,
   project,
+  projects = [],
   now,
   pending,
   onEdit,
   onDelete,
   onStatus,
 }) {
-  const locked = project.status !== 'ACTIVE'
   return (
     <div className="task-table-container">
       <table className="task-table">
         <caption className="sr-only">
-          Công việc trong dự án {project.name}
+          {project.id === 'all'
+            ? 'Công việc trong tất cả dự án'
+            : `Công việc trong dự án ${project.name}`}
         </caption>
         <thead>
           <tr>
@@ -40,6 +42,11 @@ export function TaskTable({
         </thead>
         <tbody>
           {tasks.map((task) => {
+            const owner =
+              project.id === 'all'
+                ? projects.find((item) => item.id === task.projectId)
+                : project
+            const locked = owner?.status !== 'ACTIVE'
             const due = dueIndicator(task, now)
             return (
               <tr
@@ -61,7 +68,7 @@ export function TaskTable({
                   )}
                 </td>
                 <td data-label="Dự án">
-                  <span>{project.name}</span>
+                  <span>{owner?.name || 'Dự án không còn khả dụng'}</span>
                 </td>
                 <td data-label="Trạng thái">
                   <select

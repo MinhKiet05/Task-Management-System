@@ -1,3 +1,4 @@
+import { keys } from '../query/keys.js'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { dashboardApi } from '../api/dashboard.js'
@@ -20,7 +21,7 @@ export function DashboardPage() {
   const [now, setNow] = useState(() => new Date())
   const [upcomingPage, setUpcomingPage] = useState(0)
   const [overduePage, setOverduePage] = useState(0)
-  const summary = useApiResource(dashboardApi.summary, 'dashboard-summary')
+  const summary = useApiResource(dashboardApi.summary, keys.summary())
   const loadUpcoming = useCallback(
     (signal) => dashboardApi.upcoming(upcomingPage, signal),
     [upcomingPage],
@@ -29,15 +30,9 @@ export function DashboardPage() {
     (signal) => dashboardApi.overdue(overduePage, signal),
     [overduePage],
   )
-  const upcoming = useApiResource(
-    loadUpcoming,
-    `dashboard-upcoming-${upcomingPage}`,
-  )
-  const overdue = useApiResource(
-    loadOverdue,
-    `dashboard-overdue-${overduePage}`,
-  )
-  const projects = useApiResource(dashboardApi.projects, 'dashboard-projects')
+  const upcoming = useApiResource(loadUpcoming, keys.upcoming(upcomingPage))
+  const overdue = useApiResource(loadOverdue, keys.overdue(null, overduePage))
+  const projects = useApiResource(dashboardApi.projects, keys.projects(0, 4))
   const projectMap = useMemo(
     () =>
       new Map(

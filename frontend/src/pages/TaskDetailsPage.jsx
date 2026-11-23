@@ -1,3 +1,4 @@
+import { keys } from '../query/keys.js'
 import { useCallback } from 'react'
 import { Link, useParams } from 'react-router'
 import { dashboardApi } from '../api/dashboard.js'
@@ -17,7 +18,7 @@ export function TaskDetailsPage() {
     (signal) => dashboardApi.task(taskId, signal),
     [taskId],
   )
-  const resource = useApiResource(load, `task-${taskId}`)
+  const resource = useApiResource(load, keys.task(taskId))
   usePageTitle(resource.data?.title || 'Chi tiết công việc', 'TaskFlow')
   return (
     <div className="dashboard">
