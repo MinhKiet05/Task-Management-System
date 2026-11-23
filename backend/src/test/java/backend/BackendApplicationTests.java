@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import backend.repository.AuthRepository;
 import backend.security.RlsContext;
+import backend.service.ProjectService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(properties = {
@@ -16,6 +17,7 @@ class BackendApplicationTests {
 
     @MockitoBean private AuthRepository authRepository;
     @MockitoBean private RlsContext rlsContext;
+    @MockitoBean private ProjectService projectService;
 
     @Test
     void contextLoads() {

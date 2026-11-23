@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import backend.dto.ApiErrorResponse;
 import backend.dto.ApiErrorResponse.ValidationError;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,18 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException exception, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.of(
+                HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler({ConcurrencyFailureException.class, DataIntegrityViolationException.class})
+    public ResponseEntity<ApiErrorResponse> handleDatabaseConflict(Exception exception, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(
+                HttpStatus.CONFLICT, "Request conflicts with the current data state", request.getRequestURI()));
+    }
 
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<ApiErrorResponse> handleAuthException(AuthException exception, HttpServletRequest request) {

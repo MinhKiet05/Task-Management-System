@@ -45,6 +45,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/projects").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/*").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/projects/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/projects/*").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/projects/*/archive").authenticated()
                         // Business routes are introduced only with their own authorization rules.
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptions -> exceptions
