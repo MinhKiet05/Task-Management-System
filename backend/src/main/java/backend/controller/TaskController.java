@@ -18,6 +18,7 @@ import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,14 +37,14 @@ public class TaskController {
     private final TaskService tasks;
 
     @PostMapping("/projects/{projectId}/tasks")
-    public ResponseEntity<TaskResponse> create(@AuthenticationPrincipal AuthPrincipal principal,
+    public ResponseEntity<TaskResponse> create(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal,
                                                @PathVariable UUID projectId, @Valid @RequestBody TaskRequest request) {
         TaskResponse result = tasks.create(principal, projectId, request);
         return ResponseEntity.created(URI.create("/api/tasks/" + result.id())).body(result);
     }
 
     @GetMapping("/projects/{projectId}/tasks")
-    public PageResponse<TaskResponse> list(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID projectId,
+    public PageResponse<TaskResponse> list(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID projectId,
                                            @RequestParam(required = false) @Size(max = 255) String search,
                                            @RequestParam(required = false) TaskStatus status,
                                            @RequestParam(required = false) TaskPriority priority,
@@ -54,24 +55,24 @@ public class TaskController {
     }
 
     @GetMapping("/tasks/{taskId}")
-    public TaskResponse get(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId) {
+    public TaskResponse get(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId) {
         return tasks.get(principal, taskId);
     }
 
     @PutMapping("/tasks/{taskId}")
-    public TaskResponse update(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId,
+    public TaskResponse update(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId,
                                @Valid @RequestBody TaskRequest request) {
         return tasks.update(principal, taskId, request);
     }
 
     @PatchMapping("/tasks/{taskId}/status")
-    public TaskResponse status(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId,
+    public TaskResponse status(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId,
                                @Valid @RequestBody TaskStatusRequest request) {
         return tasks.changeStatus(principal, taskId, request.status());
     }
 
     @DeleteMapping("/tasks/{taskId}")
-    public ResponseEntity<Void> delete(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId) {
+    public ResponseEntity<Void> delete(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID taskId) {
         tasks.delete(principal, taskId);
         return ResponseEntity.noContent().build();
     }

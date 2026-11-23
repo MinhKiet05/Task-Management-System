@@ -43,7 +43,7 @@ Date filtering, ordering, pagination and counts execute in SQL. The existing pro
 
 ## Verification
 
-Run `./mvnw compile test` for database-independent checks or `./scripts/Test-Postgres.ps1` on Windows for the full isolated local PostgreSQL suite. Integration tests freeze the dashboard clock independently of the real JWT clock, and cover zero tasks, status totals, percentage rounding, ownership, project filters, today/day-seven/day-eight boundaries, overdue/null/DONE exclusions, archived tasks, deterministic UUID ordering, pagination and invalid inputs. A statistics assertion verifies summary executes one JPA SQL statement and loads zero entities when no project filter is supplied.
+Run `./mvnw compile test` for unit checks and automatic Testcontainers integration when Docker is available, or `./scripts/Test-Postgres.ps1` on Windows for the isolated local PostgreSQL fallback. See `api-documentation-and-tests.md` for current test selection and safety checks. Integration tests freeze the dashboard clock independently of the real JWT clock, and cover zero tasks, status totals, percentage rounding, ownership, project filters, today/day-seven/day-eight boundaries, overdue/null/DONE exclusions, archived tasks, deterministic UUID ordering, pagination and invalid inputs. A statistics assertion verifies summary executes one JPA SQL statement and loads zero entities when no project filter is supplied.
 
 Verified with Java 21 and isolated PostgreSQL 18.7: compilation and all 58 tests passed without failures/skips, including seven new dashboard integration tests. Flyway/Hibernate checks passed, the temporary server stopped successfully, and production Supabase was not contacted.
 

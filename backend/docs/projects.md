@@ -50,7 +50,7 @@ Deletion atomically uses the existing `tasks.project_id ON DELETE CASCADE` const
 
 ## Verification
 
-`./mvnw compile test` runs database-independent checks. On Windows, `./scripts/Test-Postgres.ps1` creates an isolated loopback PostgreSQL cluster, runs all integration tests, and stops its server. No production credentials or Supabase connection are used.
+`./mvnw compile test` runs unit checks and prefers Testcontainers for integration tests when Docker is available; otherwise database suites skip unless the isolated local runner supplies its override. See `api-documentation-and-tests.md`. On Windows, `./scripts/Test-Postgres.ps1` creates an isolated loopback PostgreSQL cluster, runs all integration tests, and stops its server. No production credentials or Supabase connection are used.
 
 Verified with Java 21 and PostgreSQL 18.7: compilation and all 42 tests passed without failures or skips, including eight new project integration tests. Coverage includes all six anonymous requests, forged ownership fields, cross-user operations, missing IDs, pagination, replacement/restore semantics, invalid inputs, idempotent archive with database task-write rejection, and cascade deletion preserving unrelated tasks. Existing authentication/database tests remain included.
 
