@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. FE-05 adds project management. FE-06 adds project-scoped task management. FE-07 adds a Kanban board with incremental column loading, drag-and-drop status updates, keyboard alternatives and an editable task details drawer.
+TaskFlow is a JavaScript React/Vite application with Tailwind CSS, React Router, Axios, TanStack Query, Sonner and dnd-kit. It includes Vietnamese authentication, a protected responsive workspace, a real-API dashboard, project/task management, an All Projects task list and a Kanban board with optimistic status changes and an editable task drawer. FE-08 adds same-tab reload restoration and full-stack integration verification; production deployment remains pending authorization/access. See the [root README](../README.md) for current deployment status and instructions. Later historical verification sections describe the state at each earlier milestone.
 
 ## Local setup
 
@@ -25,13 +25,14 @@ This is the backend origin, without `/api` or a trailing path. HTTPS is required
 
 ```text
 src/
-  api/          Axios client, environment validation, in-memory token store
+  api/          Axios client, environment validation, tab-scoped token store
   assets/       Shared brand mark and future design assets
   components/   Shared presentation and error boundary
   contexts/     Authentication state provider
   hooks/        Authentication access and document titles
   layouts/      Workspace and authentication shells
-  pages/        Route-level placeholders and 404
+  pages/        Dashboard, projects, tasks, Kanban, auth, details and 404
+  query/        Session-scoped cache keys, client and mutation reconciliation
   routes/       Route definitions
 ```
 
@@ -39,7 +40,7 @@ Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/tasks/:tas
 
 Project cards now open `/projects/:projectId/tasks`. Project search/status filtering/date sorting apply only to the loaded API page and are explicitly labeled. Project CRUD/archiving use real API endpoints with full PUT payloads and confirmation dialogs. See [FE-05 project management](docs/projects.md) for supported behavior, limitations and verification.
 
-`/tasks` and `/projects/:projectId/tasks` share the task workspace. Select an owned project to view its tasks and counts; there is no global task-list endpoint or cross-project pagination. Task search, status/priority filters, sorting and pagination run on the backend for the selected project. See [FE-06 task management](docs/tasks.md) for request contracts, archived restrictions, date handling and verification.
+`/tasks` defaults to All Projects; `/projects/:projectId/tasks` selects one owned project. There is no global backend task-list endpoint: the frontend retrieves complete project-scoped pages with limited concurrency and applies combined filtering/sorting/pagination locally. A fresh complete project snapshot can also serve individual pages; otherwise the individual-project API handles filtering/pagination. See the All Projects section below and [FE-06 task management](docs/tasks.md) for the original contracts and archive restrictions.
 
 `/kanban` shows one owned project in three status columns, with server-side title/priority filtering, accurate filtered totals and explicit per-column loading of 20 tasks at a time. Cards open a right-side details drawer; create/edit/delete reuse the existing task dialogs. Dragging persists status through the backend, with pending/rollback behavior and a keyboard-accessible status selector. See [FE-07 Kanban and task drawer](docs/kanban.md) for loading limits, ordering, accessibility and verification.
 
@@ -53,7 +54,7 @@ Future API modules should import `apiClient` from `src/api/client.js` and use re
 
 `useAuth()` exposes current `user`, lifecycle `status`, `completeAuthentication`, `logout`, `retryUser` and the existing token helpers. Successful registration/login stores the returned access token and user, then navigates to `/dashboard`. A token without user data triggers one deduplicated `/api/auth/me` request. Token presence alone does not expose protected content. Never decode an unverified JWT to authorize access.
 
-Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads return to login. A 401 clears the matching current token and user; late failures from an older token do not clear a newer session. Backend-returned access-token expiry also clears the session. A 403 or network error preserves the token. There is no automatic refresh. Logout sends the current bearer token to the backend before clearing local state and redirecting. Failed revocation stays visible and retryable rather than claiming server logout succeeded.
+The token and its server-provided expiration are stored in memory and same-tab `sessionStorage`, scoped to the configured API origin. Reload restores only an unexpired record and verifies `/api/auth/me` before protected content; no user or query cache is persisted. Missing/malformed/expired records are removed, and denied storage falls back to memory-only login. A 401 clears the matching token, storage, user and query caches; stale failures cannot clear a newer session. Expiry also clears the session. A 403/network error preserves it. There is no refresh endpoint or automatic extension. Logout revokes on the server before clearing locally; failed revocation stays retryable. JavaScript-readable bearer storage is exposed to XSS; it is not an HttpOnly refresh-cookie design. Closing/duplicating tabs follows browser sessionStorage behavior, and cross-tab automatic logout is not implemented.
 
 ## Checks
 
@@ -164,3 +165,28 @@ Files changed for this optimization (relative to `frontend/`):
 - Verification/documentation: new `tests/queryCache.test.js`, `scripts/performance-smoke.mjs`; this `README.md`.
 
 Reference for the adopted cache/cancellation/optimistic-update concepts: [TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates).
+
+## All Projects on the Tasks page
+
+`/tasks` defaults to **Tất cả dự án** (`all`), the first project-selector option. A project UUID or `/projects/:projectId/tasks` still selects an individual project; choosing All Projects from a project route navigates to `/tasks`. Each row shows its actual project and uses that project's archive restrictions. Create in the combined view starts with no target project: validation requires an accessible active project UUID. Editing preserves the task's association unless the user explicitly chooses another active project.
+
+There is no global `GET /api/tasks` request. After the shared owned-project catalog loads, `loadTaskCollection` retrieves every project's task pages sequentially in batches of 100, with a shared limiter allowing at most **three task-page reads in flight** across projects. Empty projects count as successfully loaded. Query keys `tasks/collection/:projectId` hold complete project snapshots, independently of current table filters. No first-page-only aggregation is used.
+
+Search, status/priority filters, sorting and pagination operate on the full combined collection, with accurate filtered totals. Task rows carry project metadata for the combined view. Enum priority/status ordering and timestamp precision are preserved; null dates follow PostgreSQL's default ascending/descending ordering. Client title sorting uses Vietnamese collation, which can differ from the database's configured text collation. Individual-project requests retain server-side sorting when no fresh complete snapshot is available.
+
+Complete snapshots reuse the existing 30-second freshness and five-minute garbage-collection policy. Individual pages can be derived from a fresh complete snapshot without an extra GET. Returning to All Projects reuses the same per-project caches; changing search, sort or table page does not refetch every task. Mutation cache updates now include complete snapshots, including optimistic status rollback, creation, edits/project moves and deletion. Existing paginated-list, Kanban, dashboard and authentication-cache behavior remains intact.
+
+Summary/status cards use the existing dashboard summary endpoint with the selected project UUID, or without `projectId` for All Projects. Overdue totals use the backend overdue endpoint with the same scope, page 0 and size 1, preserving server timezone/business rules. These cards describe the entire selected scope, independently of table filters.
+
+If a project fails to load, its snapshot is not published as a partial success. Without a complete snapshot for every accessible project, the combined list and pagination totals are withheld. The UI names failed projects, shows a Vietnamese Sonner error and offers retry of only those failures. A failed background refresh retains the previous complete snapshot with an explicit stale-data warning. Changed page totals, duplicate/missing rows or mismatched project IDs also reject a snapshot rather than silently reporting completeness. The existing session-expiry flow cancels reads and clears the scoped caches. **Tải lại công việc** refreshes task data/statistics; **Tải lại dự án** refreshes the project catalog.
+
+This remains a frontend workaround: the first combined load costs at least one task GET per project, plus subsequent pages, and filtering/sorting uses memory proportional to the total task count. Stale/manual refreshes may reread full project snapshots. Data read across multiple HTTP requests is not a transactionally consistent database snapshot; detected paging changes require retry. For large accounts, a future authorized backend endpoint should provide owner-scoped global search/filter/sort/pagination and summary data. No such endpoint, backend code or migration was introduced here.
+
+Verification executed on Windows / Node 22.17.0:
+
+- `npm test`: **129 passed**, zero failures/skips (eight additional tests for complete retrieval, cancellation/concurrency, global filtering/sorting/pagination, project validation and snapshot mutation consistency).
+- `npm run lint` and `npm run build`: passed.
+- `node scripts/all-projects-smoke.mjs`: four groups passed against isolated mocked HTTP responses in headless Edge. Checked 113 tasks across active/archived/empty projects, a second API page, maximum three concurrent reads, default/individual scope and cache reuse, names, global filters/pagination, backend overdue totals, CRUD in both scopes, required target UUIDs, archive locks, partial failure and targeted retry. No global tasks endpoint was called.
+- Existing `node scripts/performance-smoke.mjs`: all six regression groups passed. Browser tooling/setup is described above. All external requests were intercepted; no production authentication, database writes, push or deployment occurred.
+
+Files changed (relative to `frontend/`): `src/components/tasks/TaskWorkspace.jsx`, `TaskTable.jsx`, `TaskEditor.jsx`; `src/hooks/useApiResource.js`; `src/query/keys.js`, `mutations.js`; `tests/queryCache.test.js`; this `README.md`. New files: `src/api/taskCollection.js`, `src/components/tasks/combinedTasks.js`, `src/hooks/useTaskScopeResource.js`, `tests/allProjectsTasks.test.js`, `scripts/all-projects-smoke.mjs`.

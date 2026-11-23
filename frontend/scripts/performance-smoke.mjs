@@ -101,6 +101,12 @@ await context.route('**/*', async (route) => {
   if (method === 'GET' && readDelay && !path.includes('/tasks'))
     await new Promise((done) => setTimeout(done, readDelay))
   const reply = (json, status = 200) => route.fulfill({ status, headers, json })
+  if (path === '/api/auth/me')
+    return reply({
+      id: 'test-user',
+      name: 'Người kiểm thử',
+      email: 'test@example.invalid',
+    })
   if (path === '/api/auth/login')
     return reply({
       accessToken: 'TEST_ONLY_ACCESS_TOKEN',

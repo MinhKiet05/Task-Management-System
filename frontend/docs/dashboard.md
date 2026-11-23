@@ -1,5 +1,7 @@
 # FE-04: Dashboard with real API data
 
+> Historical FE-04 implementation record. Management pages are now implemented, reads use the shared TanStack Query cache and FE-08 supports verified same-tab reload restoration. See the [current README](../README.md) for the final behavior and test/deployment status.
+
 The live OpenAPI specification and repository DTOs/controllers were inspected before implementation. All business values rendered by the application come from the configured backend through the shared bearer-authenticated Axios client. There are no demo records or fallback statistics in application source.
 
 ## API mapping

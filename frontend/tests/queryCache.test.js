@@ -390,3 +390,35 @@ test('Kanban sorting compares timestamps with differing fractional precision cor
     ['zz', 'z'],
   )
 })
+
+test('complete project snapshots stay consistent through optimistic status, rollback, moves, creation and deletion', async () => {
+  const a = task('a')
+  put(keys.collection('p1'), { content: [a], totalElements: 1 })
+  put(keys.collection('p2'), { content: [], totalElements: 0 })
+  const response = deferred()
+  const request = withTaskCache({ status: () => response.promise }).status(
+    'a',
+    'DONE',
+  )
+  const rejection = assert.rejects(request, /failed/)
+  await tick()
+  assert.equal(get(keys.collection('p1')).content[0].status, 'DONE')
+  response.reject(new Error('failed'))
+  await rejection
+  assert.equal(get(keys.collection('p1')).content[0].status, 'TODO')
+  const api = withTaskCache({
+    update: async () => ({ ...a, projectId: 'p2' }),
+    create: async () => task('b', 'TODO', { projectId: 'p2' }),
+    remove: async () => {},
+  })
+  await api.update('a', { projectId: 'p2' })
+  assert.equal(get(keys.collection('p1')).totalElements, 0)
+  assert.equal(get(keys.collection('p2')).content[0].projectId, 'p2')
+  await api.create({ projectId: 'p2' })
+  assert.equal(get(keys.collection('p2')).totalElements, 2)
+  await api.remove('a')
+  assert.deepEqual(
+    get(keys.collection('p2')).content.map((row) => row.id),
+    ['b'],
+  )
+})

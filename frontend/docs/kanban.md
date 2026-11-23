@@ -1,5 +1,7 @@
 # FE-07: Kanban board and task details drawer
 
+> Historical FE-07 implementation record. Status writes now reconcile shared TanStack Query caches without reloading all columns, and FE-08 restores unexpired same-tab sessions after `/api/auth/me`. Drawer confirmations retain the selected task until mutation completion. See the [current README](../README.md).
+
 `/kanban` uses the protected AppLayout and existing in-memory authentication lifecycle. `/kanban?projectId=UUID` also supports an initial owned project scope. No backend, Supabase or Flyway changes are involved. Stitch screenshots guide the lavender surfaces, indigo actions, three-column board and right-side drawer; their sample users, tasks and unsupported features are not runtime data.
 
 ## API and incremental loading

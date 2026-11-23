@@ -1,4 +1,5 @@
 export const keys = {
+  collection: (projectId) => ['tasks', 'collection', projectId],
   user: ['auth', 'user'],
   catalog: ['projects', 'catalog'],
   projects: (page, size = 9) => ['projects', 'page', { page, size }],
