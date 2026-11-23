@@ -21,7 +21,6 @@ export function TaskDrawer({
 }) {
   const dialog = useRef(null)
   const [mode, setMode] = useState(null)
-  const [notice, setNotice] = useState('')
   const load = useCallback((signal) => tasksApi.get(taskId, signal), [taskId])
   const resource = useApiResource(load, `kanban-detail-${taskId}`)
   const task = resource.data
@@ -92,11 +91,6 @@ export function TaskDrawer({
               <>
                 <p className="task-drawer-label">Tên công việc</p>
                 <h2 id="task-drawer-title">{task.title}</h2>
-                {notice && (
-                  <p className="task-success" role="status">
-                    {notice}
-                  </p>
-                )}
                 <div className="task-drawer-project">
                   <Icon name="projects" />
                   <div>
@@ -188,7 +182,6 @@ export function TaskDrawer({
           onClose={() => setMode(null)}
           onSuccess={(result) => {
             setMode(null)
-            setNotice('Đã lưu thay đổi.')
             resource.retry()
             onChanged(result, 'edit')
           }}

@@ -7,7 +7,7 @@ import { projectForm, projectPayload, validateProject } from './projectModel.js'
 export function ProjectEditor({ project, onClose, onSuccess }) {
   const [values, setValues] = useState(() => projectForm(project))
   const [errors, setErrors] = useState({})
-  const mutation = useProjectMutation(onSuccess)
+  const mutation = useProjectMutation(onSuccess, project ? 'update' : 'create')
   const combined = { ...mutation.fieldErrors, ...errors }
 
   function change(event) {

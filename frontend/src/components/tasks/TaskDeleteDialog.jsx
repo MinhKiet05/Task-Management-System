@@ -3,7 +3,7 @@ import { useTaskMutation } from '../../hooks/useTaskMutation.js'
 import { ProjectDialog } from '../projects/ProjectDialog.jsx'
 
 export function TaskDeleteDialog({ task, onClose, onSuccess }) {
-  const mutation = useTaskMutation(onSuccess)
+  const mutation = useTaskMutation(onSuccess, 'delete')
   return (
     <ProjectDialog
       title="Xóa công việc?"

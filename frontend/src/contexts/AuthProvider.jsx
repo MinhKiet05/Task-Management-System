@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { AuthContext } from './AuthContext.js'
-import { clearAccessToken, setAccessToken } from '../api/tokenStore.js'
+import {
+  clearAccessToken,
+  setAccessToken,
+  getAccessToken,
+} from '../api/tokenStore.js'
 import { authSession } from './authSession.js'
+import { notifySessionExpired } from '../lib/notify.js'
 
 export function AuthProvider({ children }) {
   const session = useSyncExternalStore(
@@ -18,7 +23,10 @@ export function AuthProvider({ children }) {
     const remaining = Date.parse(session.expiresAt) - Date.now()
     if (!Number.isFinite(remaining)) return
     const timer = setTimeout(
-      clearAccessToken,
+      () => {
+        if (getAccessToken()) notifySessionExpired()
+        clearAccessToken()
+      },
       Math.max(0, Math.min(remaining, 2147483647)),
     )
     return () => clearTimeout(timer)

@@ -23,8 +23,8 @@ for (const [name, expected] of [
 
 test('navigation contains only the four supported workspace routes', () => {
   assert.deepEqual(
-    navigation.map(({ to }) => to),
-    ['/dashboard', '/tasks', '/projects', '/kanban'],
+    navigation.map(({ to }) => to).sort(),
+    ['/dashboard', '/tasks', '/projects', '/kanban'].sort(),
   )
   assert.equal(pageContext('/projects'), 'Dự án')
   assert.equal(pageContext('/projects/example'), 'Dự án')

@@ -18,7 +18,6 @@ export function ProjectsPage() {
   const [status, setStatus] = useState('ALL')
   const [sort, setSort] = useState('createdAt:desc')
   const [dialog, setDialog] = useState(null)
-  const [notice, setNotice] = useState('')
   const load = useCallback((signal) => projectsApi.list(page, signal), [page])
   const resource = useApiResource(load, `projects-${page}`)
   const projects = useMemo(
@@ -28,21 +27,11 @@ export function ProjectsPage() {
   const ready = resource.status === 'success'
 
   function open(action, project) {
-    setNotice('')
     setDialog({ action, project })
   }
   function saved() {
     const action = dialog.action
     setDialog(null)
-    setNotice(
-      action === 'create'
-        ? 'Đã tạo dự án.'
-        : action === 'edit'
-          ? 'Đã cập nhật dự án.'
-          : action === 'archive'
-            ? 'Đã lưu trữ dự án.'
-            : 'Đã xóa dự án và các công việc liên quan.',
-    )
     if (action === 'create') {
       setPage(0)
       setSearch('')
@@ -74,11 +63,6 @@ export function ProjectsPage() {
           ＋ Tạo dự án mới
         </button>
       </header>
-      {notice && (
-        <p className="projects-notice" role="status">
-          {notice}
-        </p>
-      )}
       <section
         className="projects-controls"
         aria-label="Tìm kiếm và bộ lọc dự án"

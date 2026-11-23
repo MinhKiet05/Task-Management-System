@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { authenticate } from '../api/auth.js'
-import {
-  authErrorMessage,
-  authFieldErrors,
-  validateAuth,
-} from '../components/auth/validation.js'
+import { authFieldErrors, validateAuth } from '../components/auth/validation.js'
 import { useAuth } from './useAuth.js'
+import { notify, sessionExpiredToastId } from '../lib/notify.js'
+import { startOperationNotification } from '../lib/operationNotification.js'
 
 export function useAuthForm(mode) {
   const [values, setValues] = useState({
@@ -16,12 +14,17 @@ export function useAuthForm(mode) {
     confirmPassword: '',
   })
   const [errors, setErrors] = useState({})
-  const [errorMessage, setErrorMessage] = useState('')
   const [pending, setPending] = useState(false)
   const request = useRef(null)
   const { completeAuthentication } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => () => request.current?.abort(), [])
+  useEffect(
+    () => () => {
+      request.current?.controller.abort()
+      request.current?.feedback.cancel()
+    },
+    [],
+  )
 
   function change(event) {
     const { name, value } = event.target
@@ -31,7 +34,6 @@ export function useAuthForm(mode) {
       [name]: undefined,
       ...(name === 'password' ? { confirmPassword: undefined } : {}),
     }))
-    setErrorMessage('')
   }
 
   function blur(event) {
@@ -48,28 +50,31 @@ export function useAuthForm(mode) {
     const form = event.currentTarget
     const validation = validateAuth(values, mode)
     setErrors(validation)
-    setErrorMessage('')
     if (Object.keys(validation).length) {
       form.elements.namedItem(Object.keys(validation)[0])?.focus()
       return
     }
     const controller = new AbortController()
-    request.current = controller
+    const feedback = startOperationNotification(notify, `auth.${mode}`)
+    request.current = { controller, feedback }
     setPending(true)
     try {
       const data = await authenticate(mode, values, controller.signal)
       if (controller.signal.aborted) return
+      notify.dismiss(sessionExpiredToastId)
+      feedback.success()
       completeAuthentication(data)
       navigate('/dashboard', { replace: true })
     } catch (error) {
       if (!controller.signal.aborted) {
-        setErrorMessage(authErrorMessage(error, mode))
+        feedback.error(error)
         setErrors(authFieldErrors(error))
       }
     } finally {
+      feedback.cancel()
       if (!controller.signal.aborted) setPending(false)
       request.current = null
     }
   }
-  return { values, errors, errorMessage, pending, change, blur, submit }
+  return { values, errors, pending, change, blur, submit }
 }

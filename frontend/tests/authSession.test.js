@@ -11,6 +11,8 @@ const user = {
 function setup({
   getCurrentUser = async () => user,
   revokeSession = async () => {},
+  onLogoutSuccess = () => {},
+  onLogoutFailure = () => {},
 } = {}) {
   let token = null
   const listeners = new Set()
@@ -31,7 +33,13 @@ function setup({
   }
   return {
     tokens,
-    session: createAuthSession({ tokens, getCurrentUser, revokeSession }),
+    session: createAuthSession({
+      tokens,
+      getCurrentUser,
+      revokeSession,
+      onLogoutSuccess,
+      onLogoutFailure,
+    }),
   }
 }
 
@@ -47,6 +55,25 @@ test('anonymous sessions do not load a user', async () => {
   assert.equal(session.getSnapshot().status, 'anonymous')
   assert.equal(calls, 0)
   session.dispose()
+})
+
+test('logout notification callbacks fire once for confirmed success, never for an already expired session', async () => {
+  for (const status of [204, 401, 503]) {
+    let successes = 0,
+      failures = 0
+    const { session } = setup({
+      revokeSession: async () => {
+        if (status !== 204) throw { response: { status } }
+      },
+      onLogoutSuccess: () => successes++,
+      onLogoutFailure: () => failures++,
+    })
+    session.completeAuthentication({ accessToken: 'test-only-token', user })
+    await Promise.all([session.logout(), session.logout()])
+    assert.equal(successes, status === 204 ? 1 : 0)
+    assert.equal(failures, status === 503 ? 1 : 0)
+    session.dispose()
+  }
 })
 
 test('login seeds the real response user, avoiding a duplicate /me request', async () => {

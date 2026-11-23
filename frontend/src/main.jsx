@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router'
 import { AppErrorBoundary } from './components/AppErrorBoundary.jsx'
 import { AuthProvider } from './contexts/AuthProvider.jsx'
 import { AppRoutes } from './routes/AppRoutes.jsx'
+import { GlobalToaster } from './components/notifications/GlobalToaster.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -12,6 +13,7 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <GlobalToaster />
         </AuthProvider>
       </BrowserRouter>
     </AppErrorBoundary>
