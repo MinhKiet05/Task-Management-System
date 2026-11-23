@@ -1,11 +1,7 @@
 export function passwordRequirements(password) {
   return [
     { label: 'Ít nhất 12 ký tự', met: [...password].length >= 12 },
-    {
-      label: 'Tối đa 72 byte UTF-8 (ký tự có dấu có thể chiếm nhiều byte)',
-      met:
-        password.length > 0 && new TextEncoder().encode(password).length <= 72,
-    },
+
     {
       label: 'Không chỉ có khoảng trắng hoặc chứa ký tự không hợp lệ',
       met: Boolean(password.trim()) && !password.includes('\0'),

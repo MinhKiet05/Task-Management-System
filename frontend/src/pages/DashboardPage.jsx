@@ -3,10 +3,10 @@ import { PlaceholderPage } from '../components/PlaceholderPage.jsx'
 export function DashboardPage() {
   return (
     <PlaceholderPage
-      title="Your work, at a glance."
-      description="A clear view of your progress, upcoming deadlines, and what needs your attention."
+      title="Tổng quan"
+      description="Theo dõi dự án và công việc trong không gian cá nhân của bạn."
       icon="dashboard"
-      features={['Progress overview', 'Upcoming deadlines', 'Overdue tasks']}
+      features={['Tiến độ công việc', 'Hạn chót sắp tới', 'Công việc quá hạn']}
     />
   )
 }

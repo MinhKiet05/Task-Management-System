@@ -19,7 +19,7 @@ export function useAuthForm(mode) {
   const [errorMessage, setErrorMessage] = useState('')
   const [pending, setPending] = useState(false)
   const request = useRef(null)
-  const { setAccessToken } = useAuth()
+  const { completeAuthentication } = useAuth()
   const navigate = useNavigate()
   useEffect(() => () => request.current?.abort(), [])
 
@@ -59,7 +59,7 @@ export function useAuthForm(mode) {
     try {
       const data = await authenticate(mode, values, controller.signal)
       if (controller.signal.aborted) return
-      setAccessToken(data.accessToken)
+      completeAuthentication(data)
       navigate('/dashboard', { replace: true })
     } catch (error) {
       if (!controller.signal.aborted) {

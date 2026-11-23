@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register now use centered Vietnamese TaskFlow forms; workspace pages remain placeholders. Route guards, CRUD, dashboard data and Kanban interactions are deferred.
+FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout; workspace content remains placeholders. CRUD, dashboard data and Kanban interactions are deferred.
 
 ## Local setup
 
@@ -35,19 +35,19 @@ src/
   routes/       Route definitions
 ```
 
-Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404. Workspace pages are accessible previews and make no API requests. Login/register submit to the existing authentication API. No frontend route authorization is implemented yet; backend authorization remains required for every protected request.
+Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404 inside the protected shell. Workspace routes require an authenticated user and redirect to `/login` otherwise. Workspace content remains placeholders and makes no business-data requests. Backend authorization remains required for every protected API request. See [FE-03 application layout](docs/application-layout.md).
 
 ## API and token handling
 
 The live [OpenAPI specification](https://task-management-system-i7xu.onrender.com/v3/api-docs) was inspected on 2026-11-23. It describes 20 operations and the `bearerAuth` HTTP bearer scheme. Register/login return `accessToken`, `tokenType`, `expiresAt` and `user`. Tokens require an active backend session. Logout revokes that session; there is no refresh-token endpoint.
 
-Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. The auth UI uses register/login only. Consult the actual specification again when adding further integrations.
+Existing authentication paths are `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` and `GET /api/auth/me`. The frontend uses all four for the authentication lifecycle. Task listing is project-scoped at `GET /api/projects/{projectId}/tasks`; `/tasks` and `/kanban` are frontend routes, not new backend endpoints. Consult the actual specification again when adding further integrations.
 
 Future API modules should import `apiClient` from `src/api/client.js` and use relative paths beginning with `/api/`. The client supplies JSON accept headers, a 15-second timeout and the current bearer token. It rejects absolute URLs and base-URL overrides to keep tokens on the configured backend. Errors remain Axios errors, preserving the backend response/status for later form and notification handling. Do not log Axios errors/config objects because they can contain authorization headers.
 
-`useAuth()` exposes `setAccessToken`, `clearAccessToken` and `hasAccessToken`. Successful registration/login stores the returned access token in the existing memory store and navigates to `/dashboard`. Token presence is not proof of authorization; `/api/auth/me` remains available for future current-user state. Never decode an unverified JWT to authorize access.
+`useAuth()` exposes current `user`, lifecycle `status`, `completeAuthentication`, `logout`, `retryUser` and the existing token helpers. Successful registration/login stores the returned access token and user, then navigates to `/dashboard`. A token without user data triggers one deduplicated `/api/auth/me` request. Token presence alone does not expose protected content. Never decode an unverified JWT to authorize access.
 
-Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads clear them. A 401 clears the matching current token; late failures from an older token do not clear a newer session. A 403 or network error preserves the token. There is no automatic redirect, refresh or retry. Clearing local state is not server logout: the future logout flow must call the documented endpoint with the current token before clearing it.
+Tokens remain in memory, with no localStorage/sessionStorage persistence; page reloads return to login. A 401 clears the matching current token and user; late failures from an older token do not clear a newer session. Backend-returned access-token expiry also clears the session. A 403 or network error preserves the token. There is no automatic refresh. Logout sends the current bearer token to the backend before clearing local state and redirecting. Failed revocation stays visible and retryable rather than claiming server logout succeeded.
 
 ## Checks
 

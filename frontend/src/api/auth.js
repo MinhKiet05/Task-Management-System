@@ -10,3 +10,12 @@ export async function authenticate(mode, values, signal) {
   const { data } = await apiClient.post(path, body, { signal })
   return data
 }
+
+export async function getCurrentUser(signal) {
+  const { data } = await apiClient.get('/api/auth/me', { signal })
+  return data
+}
+
+export async function revokeSession() {
+  await apiClient.post('/api/auth/logout')
+}
