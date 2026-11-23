@@ -10,6 +10,28 @@ import {
 
 afterEach(clearAccessToken)
 
+test('matching concurrent unauthorized requests emit one expiry notification, public/stale 401s emit none', async () => {
+  let events = 0
+  const client = createApiClient('https://api.example.com', {
+    onSessionExpired: () => events++,
+  })
+  setAccessToken('test-only-token')
+  await Promise.allSettled([
+    client.get('/first', { adapter: failure(401) }),
+    client.get('/second', { adapter: failure(401) }),
+  ])
+  assert.equal(events, 1)
+  await assert.rejects(client.get('/public', { adapter: failure(401) }))
+  assert.equal(events, 1)
+  setAccessToken('old-test-token')
+  await assert.rejects(
+    client.get('/stale', {
+      adapter: failure(401, () => setAccessToken('new-test-token')),
+    }),
+  )
+  assert.equal(events, 1)
+})
+
 const origin = 'https://api.example.com'
 const success = (config) =>
   Promise.resolve({
