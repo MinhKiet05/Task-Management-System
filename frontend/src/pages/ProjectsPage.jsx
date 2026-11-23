@@ -3,13 +3,13 @@ import { PlaceholderPage } from '../components/PlaceholderPage.jsx'
 export function ProjectsPage() {
   return (
     <PlaceholderPage
-      title="Projects"
-      description="Give every idea a home. Organize your work into projects and keep the bigger picture in view."
+      title="Dự án"
+      description="Tổ chức ý tưởng và công việc của bạn theo từng dự án."
       icon="projects"
       features={[
-        'Project overview',
-        'Dates and milestones',
-        'Archived projects',
+        'Danh sách dự án',
+        'Ngày bắt đầu và hạn chót',
+        'Dự án đã lưu trữ',
       ]}
     />
   )

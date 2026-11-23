@@ -3,10 +3,10 @@ import { PlaceholderPage } from '../components/PlaceholderPage.jsx'
 export function KanbanPage() {
   return (
     <PlaceholderPage
-      title="Kanban"
-      description="See your work move forward, from the first idea to the final checkmark."
+      title="Bảng Kanban"
+      description="Sắp xếp công việc theo trạng thái để tập trung vào bước tiếp theo."
       icon="kanban"
-      features={['To do', 'In progress', 'Done']}
+      features={['Cần làm', 'Đang thực hiện', 'Đã hoàn thành']}
     />
   )
 }
