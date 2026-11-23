@@ -86,7 +86,7 @@ The script is repeatable via fixed UUIDs and ON CONFLICT; it does not overwrite 
 
 ## Verification
 
-`./mvnw compile test` runs the normal tests without a database; PostgreSQL integration tests are skipped unless explicitly enabled.
+`./mvnw compile test` now prefers Testcontainers for PostgreSQL integration tests when Docker is available. Without Docker or the isolated local override, database suites skip. See `api-documentation-and-tests.md` for current behavior.
 
 On Windows with local PostgreSQL binaries installed, from `backend/`:
 

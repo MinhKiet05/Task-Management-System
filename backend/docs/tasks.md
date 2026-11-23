@@ -58,7 +58,7 @@ Task creation, PUT, status PATCH, moves and direct DELETE are rejected while the
 
 ## Verification
 
-Run `./mvnw compile test` for database-independent checks. On Windows, `./scripts/Test-Postgres.ps1` runs the full suite against an isolated loopback PostgreSQL database, then stops its server. Production Supabase credentials/databases are not used.
+Run `./mvnw compile test` for unit checks and automatic Testcontainers integration when Docker is available (see `api-documentation-and-tests.md`). On Windows, `./scripts/Test-Postgres.ps1` runs the full suite against an isolated loopback PostgreSQL database, then stops its server. Production Supabase credentials/databases are not used.
 
 Verified with Java 21 and isolated PostgreSQL 18.7: compilation and all 51 tests passed without failures or skips, including nine new task integration tests. The temporary server stopped successfully. No production database was contacted.
 

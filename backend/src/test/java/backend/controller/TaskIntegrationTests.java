@@ -11,7 +11,7 @@ import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,8 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(properties = "app.jwt.secret=dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMtbG9uZyE=")
 @AutoConfigureMockMvc
-@EnabledIfEnvironmentVariable(named = "TASK2_TEST_DB_URL",
-        matches = "jdbc:postgresql://(127\\.0\\.0\\.1|localhost):[0-9]+/task2_test")
+@EnabledIf("backend.support.PostgresTestSupport#databaseAvailable")
 class TaskIntegrationTests extends PostgresTestSupport {
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper json;

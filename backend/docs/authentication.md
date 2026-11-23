@@ -46,7 +46,7 @@ Apply V2 using the configured migration owner. Existing runtime grants from Task
 
 ## Verification
 
-From `backend/`, `./mvnw compile test` runs database-independent checks (database integration suites explicitly skip without the local test URL).
+From `backend/`, `./mvnw compile test` runs unit checks and, when Docker is available, Testcontainers integration tests. Database suites skip only when neither Docker nor the isolated local override is available. See `api-documentation-and-tests.md` for current commands and safety checks.
 
 On Windows, `./scripts/Test-Postgres.ps1` creates an isolated loopback PostgreSQL cluster, applies V1/V2, runs all tests and stops the cluster. It never reads production DB variables or `.env` files. Shared test support rejects non-loopback URLs and database names other than `task2_test`.
 

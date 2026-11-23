@@ -12,6 +12,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,13 +36,13 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthPrincipal principal) {
+    public ResponseEntity<Void> logout(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal) {
         auth.logout(principal);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
-    public UserResponse me(@AuthenticationPrincipal AuthPrincipal principal) {
+    public UserResponse me(@Parameter(hidden = true) @AuthenticationPrincipal AuthPrincipal principal) {
         return auth.me(principal);
     }
 }
