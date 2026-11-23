@@ -1,6 +1,6 @@
 # Task Management System frontend
 
-FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. FE-05 adds project listing, creation, editing, archiving, deletion and a read-only project task list. General task management and Kanban interactions remain placeholders.
+FE-01 provides a JavaScript React/Vite foundation with Tailwind CSS, React Router and Axios. Login/register use centered Vietnamese TaskFlow forms. FE-03 adds a protected, responsive application shell with current-user identity and session logout. FE-04 adds a real-API dashboard and read-only task details. FE-05 adds project management. FE-06 adds project-scoped task CRUD, status changes, search, filters, sorting, pagination and accurate summary counts. Kanban interactions remain a placeholder.
 
 ## Local setup
 
@@ -38,6 +38,8 @@ src/
 Routes: `/login`, `/register`, `/dashboard`, `/projects`, `/tasks`, `/tasks/:taskId`, `/kanban`. `/` redirects to `/dashboard`; unknown paths show 404 inside the protected shell. Workspace routes require an authenticated user and redirect to `/login` otherwise. The dashboard reads real summary/deadline/project data and task links open a read-only detail page. Backend authorization remains required for every protected API request. See [FE-03 application layout](docs/application-layout.md) and [FE-04 dashboard](docs/dashboard.md).
 
 Project cards now open `/projects/:projectId/tasks`. Project search/status filtering/date sorting apply only to the loaded API page and are explicitly labeled. Project CRUD/archiving use real API endpoints with full PUT payloads and confirmation dialogs. See [FE-05 project management](docs/projects.md) for supported behavior, limitations and verification.
+
+`/tasks` and `/projects/:projectId/tasks` share the task workspace. Select an owned project to view its tasks and counts; there is no global task-list endpoint or cross-project pagination. Task search, status/priority filters, sorting and pagination run on the backend for the selected project. See [FE-06 task management](docs/tasks.md) for request contracts, archived restrictions, date handling and verification.
 
 ## API and token handling
 

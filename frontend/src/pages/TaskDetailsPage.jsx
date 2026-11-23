@@ -51,7 +51,11 @@ export function TaskDetailsPage() {
                   <dd>{resource.data.projectId}</dd>
                 </div>
               </dl>
-              <Link to="/tasks">Xem tất cả công việc →</Link>
+              <Link
+                to={`/tasks?projectId=${encodeURIComponent(resource.data.projectId)}`}
+              >
+                Xem công việc trong dự án →
+              </Link>
             </>
           )}
         </ResourceState>
